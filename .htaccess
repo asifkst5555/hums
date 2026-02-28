@@ -1,0 +1,13 @@
+<Files "config.php">
+  Require all denied
+</Files>
+
+<FilesMatch "^(package\.json|package-lock\.json)$">
+  Require all denied
+</FilesMatch>
+
+RedirectMatch 403 ^/sql/
+RedirectMatch 403 ^/server/
+RedirectMatch 403 ^/data/
+RedirectMatch 403 ^/node_modules/
+

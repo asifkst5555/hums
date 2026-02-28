@@ -398,6 +398,15 @@
   .btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Hind Siliguri', sans-serif; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
   .btn-add { background: var(--primary); color: white; }
   .btn-add:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(23, 72, 45, .2); }
+  .btn-subtle {
+    background: #ffffff;
+    color: var(--primary);
+    border: 1px solid #bcd2c3;
+  }
+  .btn-subtle:hover {
+    background: #f3faf5;
+    border-color: #9fc1ab;
+  }
   .table-actions {
     display: flex;
     gap: 8px;
@@ -580,6 +589,12 @@
   .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .filter-select { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Hind Siliguri', sans-serif; background: white; }
+  .toolbar-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
   .column-picker { position: relative; margin-left: auto; }
   .column-btn {
     padding: 9px 14px;
@@ -896,6 +911,13 @@
       flex-direction: column;
       align-items: flex-start;
     }
+    .toolbar-actions {
+      width: 100%;
+    }
+    .toolbar-actions .btn {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
     #programsPanel {
       grid-template-columns: 1fr !important;
     }
@@ -1135,6 +1157,13 @@
             <input id="benSearchInput" class="search-box" placeholder="নাম, NID, ফোন দিয়ে খুঁজুন..." onkeydown="if(event.key==='Enter'){applyBenSearch();}">
             <button class="btn btn-add" onclick="applyBenSearch()">🔍 খুঁজুন</button>
             <button class="btn btn-cancel" style="padding:9px 14px" onclick="resetBenSearch()">রিসেট</button>
+            <div class="toolbar-actions">
+              <button class="btn btn-subtle" onclick="printBeneficiaries()">🖨 প্রিন্ট</button>
+              <button class="btn btn-subtle" onclick="exportBeneficiariesPdf()">📄 এক্সপোর্ট PDF</button>
+              <button class="btn btn-subtle" onclick="exportBeneficiariesCsv()">⬇ এক্সপোর্ট CSV</button>
+              <button class="btn btn-subtle admin-only" onclick="triggerBeneficiaryImport()">⬆ ইমপোর্ট CSV</button>
+              <input id="benImportFile" type="file" accept=".csv,text/csv" style="display:none" onchange="handleBeneficiaryImport(event)">
+            </div>
             <select id="benProgramFilter" class="filter-select" onchange="filterByProgram(this.value)">
               <option value="">সকল কার্যক্রম</option>
             </select>
@@ -1406,7 +1435,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260228-4"></script>
+<script src="js/app.js?v=20260301-5"></script>
 <div id="toastWrap" class="toast-wrap"></div>
 </body>
 </html>

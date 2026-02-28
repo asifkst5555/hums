@@ -173,6 +173,40 @@ async function api(path, options = {}) {
   return data;
 }
 
+async function apiUpload(path, formData, options = {}) {
+  const res = await fetch(withBase(path), {
+    credentials: 'include',
+    method: options.method || 'POST',
+    body: formData,
+    ...(options.headers ? { headers: options.headers } : {}),
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const error = new Error(data?.error || 'Upload failed');
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
+function buildBeneficiaryQueryParams(includePage = true) {
+  const params = new URLSearchParams();
+  if (includePage) {
+    params.set('page', String(benQuery.page));
+    params.set('pageSize', String(benQuery.pageSize));
+  }
+  if (benQuery.q) params.set('q', benQuery.q);
+  if (benQuery.program) params.set('program', benQuery.program);
+  return params;
+}
+
 function switchRole(r) {
   loginRole = r;
   showInlineLoginMessage('');
@@ -251,12 +285,7 @@ function showPage(name) {
 }
 
 async function loadBeneficiaries() {
-  const params = new URLSearchParams({
-    page: String(benQuery.page),
-    pageSize: String(benQuery.pageSize),
-  });
-  if (benQuery.q) params.set('q', benQuery.q);
-  if (benQuery.program) params.set('program', benQuery.program);
+  const params = buildBeneficiaryQueryParams(true);
 
   const res = await api(`/api/beneficiaries/index.php?${params.toString()}`);
   state.beneficiaries = Array.isArray(res.items) ? res.items : [];
@@ -267,6 +296,142 @@ async function loadBeneficiaries() {
     totalPages: Number(res.totalPages || 1),
   };
   benQuery.page = state.beneficiariesMeta.page;
+}
+
+function buildBeneficiariesPrintHtml() {
+  const visibleCols = state.benVisibleColumns.length ? state.benVisibleColumns : [...DEFAULT_VISIBLE_BEN_COLUMNS];
+  const selectedDefs = BEN_COLUMN_DEFS.filter((c) => visibleCols.includes(c.key));
+  const now = new Date().toLocaleString('bn-BD');
+  const filterText = benQuery.q ? `খোঁজ: ${benQuery.q}` : 'খোঁজ: নেই';
+  const programText = benQuery.program ? `কার্যক্রম: ${benQuery.program}` : 'কার্যক্রম: সকল';
+  const startIndex = (state.beneficiariesMeta.page - 1) * state.beneficiariesMeta.pageSize;
+
+  const rows = state.beneficiaries
+    .map((b, i) => {
+      const cols = selectedDefs
+        .map((c) => `<td>${formatBenCell(c.key, b)}</td>`)
+        .join('');
+      return `<tr><td>${startIndex + i + 1}</td>${cols}</tr>`;
+    })
+    .join('');
+
+  return `
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <title>উপকারভোগী প্রিন্ট</title>
+  <style>
+    body{font-family: "Hind Siliguri", sans-serif; color:#143025; margin:24px;}
+    h1{font-size:20px; margin:0 0 8px;}
+    .meta{font-size:13px; margin-bottom:14px; color:#2f5d47;}
+    table{width:100%; border-collapse:collapse; font-size:12px;}
+    th,td{border:1px solid #b8cdc0; padding:7px 8px; text-align:left; vertical-align:top;}
+    th{background:#ebf4ee; font-weight:700;}
+  </style>
+</head>
+<body>
+  <h1>উপকারভোগী তালিকা</h1>
+  <div class="meta">প্রিন্ট সময়: ${esc(now)} | ${esc(filterText)} | ${esc(programText)}</div>
+  <table>
+    <thead><tr><th>#</th>${selectedDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${rows || `<tr><td colspan="${selectedDefs.length + 1}">কোনো রেকর্ড নেই</td></tr>`}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+function printBeneficiaries() {
+  if (!state.beneficiaries || !state.beneficiaries.length) {
+    notify('প্রিন্ট করার জন্য কোনো ডেটা নেই', 'info');
+    return;
+  }
+  const html = buildBeneficiariesPrintHtml();
+
+  const w = window.open('', '_blank', 'width=1200,height=800');
+  if (!w) {
+    notify('Popup blocked. ব্রাউজার popup allow করুন', 'info');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  const printNow = () => {
+    try {
+      w.print();
+    } catch {
+      notify('প্রিন্ট শুরু করা যাচ্ছে না। ব্রাউজার popup অনুমতি দিন', 'info');
+    }
+  };
+  w.addEventListener('load', printNow, { once: true });
+  setTimeout(printNow, 250);
+}
+
+function exportBeneficiariesPdf() {
+  if (!state.beneficiaries || !state.beneficiaries.length) {
+    notify('PDF এক্সপোর্ট করার জন্য কোনো ডেটা নেই', 'info');
+    return;
+  }
+  const html = buildBeneficiariesPrintHtml();
+  const w = window.open('', '_blank', 'width=1200,height=800');
+  if (!w) {
+    notify('Popup blocked. ব্রাউজার popup allow করুন', 'info');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  const printNow = () => {
+    try {
+      w.print();
+    } catch {
+      notify('PDF export শুরু করা যাচ্ছে না। ব্রাউজার popup অনুমতি দিন', 'info');
+    }
+  };
+  w.addEventListener('load', printNow, { once: true });
+  setTimeout(printNow, 250);
+  notify('প্রিন্ট ডায়ালগে Destination থেকে Save as PDF নির্বাচন করুন', 'info', { timeoutMs: 5500 });
+}
+
+function exportBeneficiariesCsv() {
+  const params = buildBeneficiaryQueryParams(false);
+  const url = withBase(`/api/beneficiaries/export.php?${params.toString()}`);
+  window.location.href = url;
+}
+
+function triggerBeneficiaryImport() {
+  const input = document.getElementById('benImportFile');
+  if (!input) return;
+  input.click();
+}
+
+async function handleBeneficiaryImport(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!/\.csv$/i.test(file.name)) {
+    notify('শুধু CSV ফাইল আপলোড করুন', 'info');
+    input.value = '';
+    return;
+  }
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const result = await apiUpload('/api/beneficiaries/import.php', fd);
+    await refreshAll();
+    const summary = `ইমপোর্ট সম্পন্ন: নতুন ${result.inserted || 0}, আপডেট ${result.updated || 0}, স্কিপ ${result.skipped || 0}`;
+    notify(summary, 'success', { timeoutMs: 5000 });
+    if (Array.isArray(result.errors) && result.errors.length) {
+      notify(`কিছু লাইন স্কিপ: ${result.errors[0]}`, 'info', { timeoutMs: 6000 });
+    }
+  } catch (err) {
+    notify(err.message || 'ইমপোর্ট ব্যর্থ', 'error', { timeoutMs: 5000 });
+  } finally {
+    input.value = '';
+  }
 }
 
 async function loadDuplicateList() {

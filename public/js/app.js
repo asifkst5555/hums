@@ -378,7 +378,7 @@ function renderBen(data = state.beneficiaries) {
       <tr>
         <td>${startIndex + i + 1}</td>
         ${selectedDefs.map((c) => `<td>${formatBenCell(c.key, b)}</td>`).join('')}
-        <td style="display:flex;gap:4px;flex-wrap:wrap">${canEdit ? `<button class="btn btn-edit" onclick="editBen(${b.id})">✏️</button><button class="btn btn-delete" onclick="deleteBen(${b.id})">🗑️</button>` : ''}</td>
+        <td><div class="table-actions">${canEdit ? `<button class="btn btn-icon btn-edit" title="সম্পাদনা" aria-label="সম্পাদনা" onclick="editBen(${b.id})">✎</button><button class="btn btn-icon btn-delete" title="মুছুন" aria-label="মুছুন" onclick="deleteBen(${b.id})">🗑</button>` : ''}</div></td>
       </tr>`
       )
       .join('');
@@ -430,7 +430,7 @@ function renderInst(data = filteredInst) {
       <td>${esc(ins.students || 0)}</td>
       <td>${esc(ins.head || '-')}</td>
       <td>${esc(ins.phone || '-')}</td>
-      <td style="display:flex;gap:4px">${canEdit ? `<button class="btn btn-edit" onclick="editInst(${ins.id})">✏️</button><button class="btn btn-delete" onclick="deleteInst(${ins.id})">🗑️</button>` : ''}</td>
+      <td><div class="table-actions">${canEdit ? `<button class="btn btn-icon btn-edit" title="সম্পাদনা" aria-label="সম্পাদনা" onclick="editInst(${ins.id})">✎</button><button class="btn btn-icon btn-delete" title="মুছুন" aria-label="মুছুন" onclick="deleteInst(${ins.id})">🗑</button>` : ''}</div></td>
     </tr>`
     )
     .join('');
@@ -453,7 +453,7 @@ function renderUsers() {
       <td><span class="status-badge" style="background:#e8f0fa;color:#2c5aa0">${u.role === 'admin' ? 'অ্যাডমিন' : u.role === 'viewer' ? 'দর্শক' : 'অপারেটর'}</span></td>
       <td>${u.union === 'all' ? 'সকল ইউনিয়ন' : esc(u.union)}</td>
       <td><span class="status-badge status-active">সক্রিয়</span></td>
-      <td><button class="btn btn-delete" onclick="deleteUser(${u.id})">🗑️</button></td>
+      <td><div class="table-actions"><button class="btn btn-icon btn-delete" title="মুছুন" aria-label="মুছুন" onclick="deleteUser(${u.id})">🗑</button></div></td>
     </tr>`
     )
     .join('');
@@ -1102,6 +1102,16 @@ function afterLogin() {
 }
 
 async function boot() {
+  ['username', 'password'].forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doLogin();
+      }
+    });
+  });
   document.querySelectorAll('.modal-overlay').forEach((el) =>
     el.addEventListener('click', function onOverlayClick(e) {
       if (e.target === this) this.classList.remove('open');

@@ -1,0 +1,15 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH="$HOME/hums.dynamicdigitalltd.com"
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/mkdir -p "$DEPLOYPATH/api"
+    - /bin/mkdir -p "$DEPLOYPATH/js"
+    - /bin/mkdir -p "$DEPLOYPATH/media"
+    - /bin/cp -R public/* "$DEPLOYPATH/"
+    - /bin/cp -R api/* "$DEPLOYPATH/api/"
+    - /bin/cp .htaccess "$DEPLOYPATH/.htaccess"
+    - >
+      if [ ! -f "$DEPLOYPATH/config.php" ]; then
+        /bin/cp config.example.php "$DEPLOYPATH/config.php";
+      fi

@@ -57,6 +57,12 @@ CREATE TABLE IF NOT EXISTS institutions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS programs (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(190) NOT NULL UNIQUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT IGNORE INTO users (id, name, username, password_hash, role, union_name, status) VALUES
   (1, 'Upazila Executive Officer', 'admin', '$2y$10$QyHCghCCjy3X1MiQdff2x.GHF/N7Bg9wvr305x8KjOqGevVUpaxfm', 'admin', 'all', 'active'),
   (2, 'Data Viewer', 'viewer', '$2y$10$39acwFZ2LvPIkMRglBvWxuGtcoig9M/CBtIB2vqIBFeGLIqfDORcW', 'viewer', 'all', 'active');

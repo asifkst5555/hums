@@ -76,7 +76,7 @@ const state = {
   dashboardReport: null,
 };
 
-let editingId = { ben: null, inst: null, user: null };
+let editingId = { ben: null, inst: null, user: null, program: null };
 let filteredInst = [];
 let benSearchDebounce = null;
 const benQuery = { page: 1, pageSize: 50, q: '', program: '' };
@@ -751,6 +751,10 @@ function clearForm(type) {
       if (el) el.value = '';
     });
   }
+  if (type === 'program') {
+    const input = document.getElementById('p-name');
+    if (input) input.value = '';
+  }
 }
 
 function checkNidLive(nid) {
@@ -838,6 +842,23 @@ async function saveUser() {
 
     closeModal('user');
     await refreshAll();
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+async function saveProgram() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) return notify('কার্যক্রমের নাম আবশ্যক', 'info');
+
+  try {
+    const result = await api('/api/beneficiaries/programs.php', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    closeModal('program');
+    await refreshAll();
+    notify(result.created ? 'নতুন কার্যক্রম যোগ হয়েছে' : 'এই কার্যক্রমটি আগে থেকেই আছে', 'success');
   } catch (err) {
     notify(err.message, 'error');
   }

@@ -891,7 +891,10 @@
 
       <!-- PROGRAMS -->
       <div class="page" id="page-programs">
-        <div class="page-title" style="margin-bottom:20px">সামাজিক সুরক্ষা কার্যক্রম</div>
+        <div class="page-header">
+          <div class="page-title" style="margin-bottom:0">সামাজিক সুরক্ষা কার্যক্রম</div>
+          <button class="btn btn-add admin-only" onclick="openModal('program')">+ নতুন কার্যক্রম</button>
+        </div>
         <div id="programsPanel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px"></div>
       </div>
 
@@ -943,6 +946,26 @@
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- Program Modal -->
+<div class="modal-overlay" id="modal-program">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">নতুন সামাজিক সুরক্ষা কার্যক্রম</div>
+      <button class="modal-close" onclick="closeModal('program')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group-modal" style="margin-bottom:0">
+        <label>কার্যক্রমের নাম *</label>
+        <input id="p-name" placeholder="যেমন: প্রতিবন্ধী ভাতা">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('program')">বাতিল</button>
+      <button class="btn-save" onclick="saveProgram()">💾 সংরক্ষণ করুন</button>
+    </div>
   </div>
 </div>
 

@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>হাটহাজারী উপজেলা তথ্য ব্যবস্থাপনা সিস্টেম</title>
+<link rel="icon" type="image/png" href="media/favicon.png">
+<link rel="shortcut icon" type="image/png" href="media/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -22,6 +24,9 @@
     --info: #2980b9;
     --shadow: 0 2px 12px rgba(26,74,46,0.10);
     --shadow-lg: 0 8px 32px rgba(26,74,46,0.15);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -31,7 +36,9 @@
   }
   body {
     font-family: 'Hind Siliguri', sans-serif;
-    background: var(--bg);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(45, 122, 79, 0.08), transparent 28%),
+      linear-gradient(180deg, #f7fbf8 0%, var(--bg) 50%);
     color: var(--text);
     min-height: 100vh;
   }
@@ -226,17 +233,79 @@
 
   /* HEADER */
   .app-header {
-    background: var(--primary);
+    background: linear-gradient(90deg, #17482d, #1d5a38 60%, #1f6a42);
     color: white; padding: 0 24px;
     display: flex; align-items: center; gap: 16px;
-    height: 64px; box-shadow: var(--shadow-lg); position: sticky; top: 0; z-index: 100;
+    height: 64px;
+    box-shadow: 0 4px 18px rgba(18, 56, 36, .28);
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,.12);
   }
-  .app-header .logo { font-family: 'Noto Serif Bengali', serif; font-size: 17px; font-weight: 700; flex: 1; }
+  .app-header .logo {
+    font-family: 'Noto Serif Bengali', serif;
+    font-size: 18px;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: .1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .site-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: 0 3px 10px rgba(0,0,0,.2);
+    flex-shrink: 0;
+  }
+  .logo-text { min-width: 0; }
   .app-header .logo span { display: block; font-size: 11px; font-weight: 400; opacity: .75; font-family: 'Hind Siliguri', sans-serif; }
   .header-btns { display: flex; gap: 8px; align-items: center; }
+  .top-datetime {
+    color: rgba(255,255,255,.78);
+    font-size: 15px;
+    font-weight: 600;
+    padding-right: 8px;
+    letter-spacing: .2px;
+    white-space: nowrap;
+  }
   .user-badge {
-    background: rgba(255,255,255,0.15); border-radius: 20px;
-    padding: 5px 14px; font-size: 13px; display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 20px;
+    padding: 4px 12px 4px 6px;
+    display: flex; align-items: center; gap: 8px;
+    min-height: 44px;
+  }
+  .user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e9b22c;
+    color: #143f28;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .user-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+  }
+  .user-text-main {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .user-text-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,.8);
+    margin-top: 2px;
+    white-space: nowrap;
   }
   .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: 'Hind Siliguri', sans-serif; transition: all .2s; }
   .btn-logout:hover { background: rgba(255,255,255,0.2); }
@@ -244,34 +313,71 @@
   /* LAYOUT */
   .app-layout { display: flex; min-height: calc(100vh - 64px); }
   .sidebar {
-    width: 240px; background: var(--surface); border-right: 1px solid var(--border);
-    padding: 20px 0; flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto;
+    width: 246px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6faf7 100%);
+    border-right: 1px solid #d2e0d6;
+    padding: 18px 10px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto;
   }
   .sidebar-section { margin-bottom: 8px; }
-  .sidebar-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 8px 20px 4px; }
+  .sidebar-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px 6px; }
   .nav-item {
-    display: flex; align-items: center; gap: 12px; padding: 11px 20px;
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px;
     cursor: pointer; font-size: 14px; color: var(--text); transition: all .15s;
     border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    margin: 2px 4px;
   }
-  .nav-item:hover { background: var(--surface2); }
-  .nav-item.active { background: #e8f5ef; color: var(--primary); font-weight: 600; border-left-color: var(--primary); }
+  .nav-item:hover { background: #edf6f1; }
+  .nav-item.active { background: #e3f2ea; color: var(--primary); font-weight: 700; border-left-color: var(--primary); box-shadow: inset 0 0 0 1px #cce2d5; }
   .nav-item .icon { width: 20px; text-align: center; font-size: 16px; }
   .badge { background: var(--accent); color: white; border-radius: 10px; padding: 2px 7px; font-size: 11px; font-weight: 700; margin-left: auto; }
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 12px;
+  }
+  .sidebar-info-card {
+    background: linear-gradient(135deg, #1f6b43, #2e8754);
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(26, 84, 54, .22);
+    border: 1px solid rgba(255,255,255,.14);
+  }
+  .sidebar-info-title {
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 700;
+    font-family: 'Noto Serif Bengali', serif;
+    margin-bottom: 5px;
+  }
+  .sidebar-info-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,.78);
+    font-weight: 600;
+  }
 
   /* CONTENT */
-  .content { flex: 1; padding: 28px 32px; overflow-y: auto; }
+  .content { flex: 1; padding: 26px 28px; overflow-y: auto; }
   .page { display: none; }
   .page.active { display: block; }
   .page-header { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-  .page-title { font-family: 'Noto Serif Bengali', serif; font-size: 22px; font-weight: 700; color: var(--primary); }
+  .page-title { font-family: 'Noto Serif Bengali', serif; font-size: 23px; font-weight: 700; color: var(--primary); letter-spacing: .1px; }
   .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
   /* CARDS */
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 24px;
+    margin-top: 24px;
+  }
   .stat-card {
-    background: var(--surface); border-radius: 14px; padding: 20px;
-    box-shadow: var(--shadow); border: 1px solid var(--border);
+    background: var(--surface); border-radius: var(--radius-md); padding: 20px;
+    box-shadow: 0 3px 14px rgba(22, 67, 44, .08);
+    border: 1px solid #d3e1d7;
     display: flex; align-items: center; gap: 16px; transition: transform .2s;
   }
   .stat-card:hover { transform: translateY(-2px); }
@@ -284,18 +390,24 @@
   .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
   /* TABLE */
-  .table-container { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .table-container {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 16px rgba(26, 74, 46, 0.08);
+    border: 1px solid #cfe0d4;
+    overflow: hidden;
+  }
   .table-toolbar { padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface2); }
   .search-box { flex: 1; min-width: 200px; padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Hind Siliguri', sans-serif; background: white; }
   .search-box:focus { outline: none; border-color: var(--primary-light); }
   .btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Hind Siliguri', sans-serif; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
   .btn-add { background: var(--primary); color: white; }
-  .btn-add:hover { background: var(--primary-light); }
+  .btn-add:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(23, 72, 45, .2); }
   .btn-edit { background: var(--info); color: white; padding: 6px 12px; font-size: 12px; }
   .btn-delete { background: var(--danger); color: white; padding: 6px 12px; font-size: 12px; }
   .btn-view { background: var(--success); color: white; padding: 6px 12px; font-size: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  thead th { padding: 12px 16px; text-align: left; font-weight: 700; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  thead th { padding: 12px 16px; text-align: left; font-weight: 700; font-size: 12px; color: #5f7b6b; text-transform: uppercase; letter-spacing: .45px; background: #edf6f0; border-bottom: 1px solid var(--border); }
   tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
   tbody tr:hover { background: #f5faf6; }
   tbody td { padding: 12px 16px; vertical-align: middle; }
@@ -367,7 +479,7 @@
   }
 
   /* DASHBOARD NOTICE */
-  .notice-card { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; }
+  .notice-card { background: linear-gradient(135deg, #1d5838, #2e7f53); color: white; border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; box-shadow: 0 8px 20px rgba(24, 82, 51, .2); border: 1px solid rgba(255,255,255,.12); }
   .notice-card .icon { font-size: 32px; }
   .notice-card h3 { font-family: 'Noto Serif Bengali', serif; font-size: 16px; margin-bottom: 4px; }
   .notice-card p { font-size: 13px; opacity: .85; }
@@ -379,9 +491,9 @@
   }
   .report-panel {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
+    border: 1px solid #d1e0d6;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 14px rgba(27, 70, 46, .07);
     overflow: hidden;
   }
   .report-head {
@@ -552,7 +664,7 @@
   }
   .officer-card {
     display: grid;
-    grid-template-columns: 128px minmax(0, 1fr);
+    grid-template-columns: 216px minmax(0, 1fr);
     gap: 14px;
     border: 1px solid #c8d8c8;
     border-radius: 14px;
@@ -562,7 +674,7 @@
   }
   .officer-photo {
     width: 100%;
-    height: 156px;
+    height: 264px;
     object-fit: contain;
     display: block;
     border-radius: 12px;
@@ -590,7 +702,7 @@
   }
   .officer-name {
     font-family: 'Noto Serif Bengali', serif;
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 700;
     color: var(--primary);
     margin-bottom: 10px;
@@ -610,17 +722,14 @@
     min-width: 0;
   }
   .officer-meta b {
-    display: block;
-    font-size: 11px;
+    font-size: 13px;
     color: #648775;
-    margin-bottom: 2px;
     font-weight: 700;
   }
   .officer-meta span {
-    display: block;
-    font-size: 14px;
+    font-size: 13px;
     color: #1a2e1a;
-    font-weight: 600;
+    font-weight: 700;
     overflow-wrap: normal;
     word-break: keep-all;
   }
@@ -635,6 +744,30 @@
     overflow-wrap: anywhere;
   }
   .officer-email b { color: #4e7662; }
+  .officer-edit-wrap {
+    padding: 0 16px 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .officer-edit-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid #c8dbce;
+    background: #f3faf5;
+    color: #1e6240;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .officer-edit-btn:hover { background: #e9f4ed; }
+  .photo-preview {
+    display: block;
+    width: min(200px, 100%);
+    height: auto;
+    border-radius: 10px;
+    border: 1px solid #d5e3d8;
+    margin-top: 8px;
+  }
 
   .union-card {
     flex-direction: column;
@@ -650,12 +783,23 @@
     .login-panel { padding: 24px 14px; }
     .dashboard-top-grid { grid-template-columns: 1fr; }
     .officer-card { grid-template-columns: 1fr; }
-    .officer-photo { width: min(200px, 100%); height: auto; margin: 0 auto; }
+    .officer-photo { width: min(338px, 100%); height: auto; margin: 0 auto; }
     .union-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media(max-width: 1400px) {
     .officer-meta-grid { grid-template-columns: 1fr; }
     .officer-meta span { font-size: 13px; }
+  }
+  @media(max-width: 1280px) {
+    .sidebar { width: 220px; }
+    .content { padding: 22px 20px; }
+    .app-header { padding: 0 14px; }
+    .user-badge {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
   @media(max-width: 768px) {
@@ -669,11 +813,73 @@
     .login-intro h2 { font-size: 29px; }
     .sidebar { display: none; }
     .content { padding: 16px; }
+    .app-header {
+      height: auto;
+      min-height: 58px;
+      padding: 10px 12px;
+      flex-wrap: wrap;
+    }
+    .site-logo { width: 32px; height: 32px; }
+    .app-header .logo { font-size: 15px; }
+    .header-btns {
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .top-datetime {
+      width: 100%;
+      order: -1;
+      text-align: right;
+      padding-right: 0;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .user-badge {
+      max-width: 70vw;
+      padding: 4px 10px;
+    }
+    .user-text-main { font-size: 13px; }
+    .user-text-sub { font-size: 10px; }
+    .table-toolbar { padding: 12px; }
+    .search-box {
+      min-width: 100%;
+      flex-basis: 100%;
+    }
+    .filter-select { width: 100%; }
+    .column-picker {
+      margin-left: 0;
+      width: 100%;
+    }
+    .column-btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .table-pager {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    #programsPanel {
+      grid-template-columns: 1fr !important;
+    }
     .form-row { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
+    .dashboard-stats-grid { margin-top: 16px; gap: 12px; }
     .union-grid { grid-template-columns: 1fr; }
     .adv-report { grid-template-columns: 1fr; }
     .kpi-grid { grid-template-columns: 1fr; }
+  }
+  @media(max-width: 560px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .dashboard-stats-grid { margin-top: 12px; }
+    .hero-stats {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .hero-stats > div { min-width: 90px; }
+    .modal-body { padding: 16px; }
+    .modal-header,
+    .modal-footer { padding-left: 16px; padding-right: 16px; }
+    .page-title { font-size: 20px; }
+    .btn { padding: 8px 12px; }
   }
 </style>
 </head>
@@ -730,10 +936,20 @@
 <!-- APP -->
 <div id="app">
   <header class="app-header">
-    <div class="logo">হাটহাজারী উপজেলা তথ্য ব্যবস্থাপনা <span>Hathazari Upazila Management System (HUMS)</span></div>
+    <div class="logo">
+      <img class="site-logo" src="media/favicon.png" alt="HUMS Logo">
+      <div class="logo-text">হাটহাজারী উপজেলা তথ্য ব্যবস্থাপনা <span>Hathazari Upazila Management System (HUMS)</span></div>
+    </div>
     <div class="header-btns">
-      <div class="user-badge">👤 <span id="currentUserLabel">Admin</span></div>
-      <button class="btn-logout" onclick="doLogout()">লগআউট</button>
+      <div id="topDateTime" class="top-datetime">...</div>
+      <div class="user-badge">
+        <span class="user-avatar">অ</span>
+        <span class="user-text">
+          <span id="currentUserLabel" class="user-text-main">অ্যাডমিন</span>
+          <span id="currentUserSub" class="user-text-sub">সিস্টেম ব্যবহারকারী</span>
+        </span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">↩ লগআউট</button>
     </div>
   </header>
   <div class="app-layout">
@@ -741,6 +957,7 @@
       <div class="sidebar-section">
         <div class="sidebar-label">প্রধান মেনু</div>
         <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> ড্যাশবোর্ড</div>
+        <div class="nav-item" onclick="showPage('union')"><span class="icon">🗺️</span> ইউনিয়ন তথ্য</div>
         <div class="nav-item" onclick="showPage('beneficiaries')"><span class="icon">👥</span> উপকারভোগী <span class="badge" id="benBadge">0</span></div>
         <div class="nav-item" onclick="showPage('institutions')"><span class="icon">🏫</span> শিক্ষা প্রতিষ্ঠান <span class="badge" id="instBadge">0</span></div>
         <div class="nav-item" onclick="showPage('programs')"><span class="icon">📋</span> সামাজিক কার্যক্রম</div>
@@ -749,7 +966,12 @@
       <div class="sidebar-section" id="adminNav">
         <div class="sidebar-label">অ্যাডমিন</div>
         <div class="nav-item" onclick="showPage('users')"><span class="icon">🔐</span> ব্যবহারকারী</div>
-        <div class="nav-item" onclick="showPage('union')"><span class="icon">🗺️</span> ইউনিয়ন তথ্য</div>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="sidebar-info-card">
+          <div class="sidebar-info-title">📍 হাটহাজারী উপজেলা</div>
+          <div class="sidebar-info-sub">চট্টগ্রাম জেলা, বাংলাদেশ</div>
+        </div>
       </div>
     </nav>
 
@@ -765,24 +987,27 @@
         </div>
         <div class="table-container dashboard-officer-row">
           <div style="padding:16px 20px;font-weight:700;font-size:14px;background:var(--surface2);border-bottom:1px solid var(--border)">👤 উপজেলা নির্বাহী অফিসার</div>
+          <div class="officer-edit-wrap">
+            <button class="officer-edit-btn admin-strict" onclick="openOfficerModal()">✏️ তথ্য সম্পাদনা</button>
+          </div>
           <div style="padding:16px">
             <div class="officer-card">
-              <img class="officer-photo" src="media/profile.jpeg" alt="উপজেলা নির্বাহী অফিসার প্রোফাইল">
+              <img id="officerPhoto" class="officer-photo" src="media/profile.jpeg" alt="উপজেলা নির্বাহী অফিসার প্রোফাইল">
               <div class="officer-body">
-                <div class="officer-role-tag">উপজেলা নির্বাহী অফিসার</div>
-                <div class="officer-name">জনাব মুহাম্মদ আব্দুল্লাহ আল মুমিন</div>
+                <div id="officerDesignationTag" class="officer-role-tag">উপজেলা নির্বাহী অফিসার</div>
+                <div id="officerName" class="officer-name">জনাব মুহাম্মদ আব্দুল্লাহ আল মুমিন</div>
                 <div class="officer-meta-grid">
-                  <div class="officer-meta"><b>যোগদানের তারিখ</b><span class="num">2025-07-28</span></div>
-                  <div class="officer-meta"><b>টেলিফোন</b><span class="num">031-2603191</span></div>
-                  <div class="officer-meta"><b>মোবাইল</b><span class="num">01836-672980</span></div>
-                  <div class="officer-meta"><b>কার্যালয়</b><span>উপজেলা নির্বাহী অফিস</span></div>
+                    <div class="officer-meta"><b>যোগদানের তারিখ :</b> <span id="officerJoinDate" class="num">2025-07-28</span></div>
+                    <div class="officer-meta"><b>টেলিফোন :</b> <span id="officerTelephone" class="num">031-2603191</span></div>
+                    <div class="officer-meta"><b>মোবাইল :</b> <span id="officerMobile" class="num">01836-672980</span></div>
+                    <div class="officer-meta"><b>কার্যালয় :</b> <span id="officerDesignation">উপজেলা নির্বাহী অফিস</span></div>
                 </div>
-                <div class="officer-email"><b>ই-মেইল:</b> unohathazari@mopa.gov.bd</div>
+                <div class="officer-email"><b>ই-মেইল:</b> <span id="officerEmail">unohathazari@mopa.gov.bd</span></div>
               </div>
             </div>
           </div>
         </div>
-        <div class="stats-grid">
+        <div class="stats-grid dashboard-stats-grid">
           <div class="stat-card"><div class="stat-icon green">👥</div><div><div class="stat-value" id="s-ben">0</div><div class="stat-label">মোট উপকারভোগী</div></div></div>
           <div class="stat-card"><div class="stat-icon blue">🏫</div><div><div class="stat-value" id="s-inst">0</div><div class="stat-label">শিক্ষা প্রতিষ্ঠান</div></div></div>
           <div class="stat-card"><div class="stat-icon orange">📋</div><div><div class="stat-value" id="s-prog">5</div><div class="stat-label">সক্রিয় কার্যক্রম</div></div></div>
@@ -946,6 +1171,39 @@
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- Officer Modal -->
+<div class="modal-overlay" id="modal-officer">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title">উপজেলা নির্বাহী অফিসার তথ্য সম্পাদনা</div>
+      <button class="modal-close" onclick="closeModal('officer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group-modal"><label>নাম *</label><input id="o-name" placeholder="নাম"></div>
+        <div class="form-group-modal"><label>পদবি *</label><input id="o-designation" placeholder="উপজেলা নির্বাহী অফিসার"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>যোগদানের তারিখ</label><input id="o-join-date" type="date"></div>
+        <div class="form-group-modal"><label>টেলিফোন</label><input id="o-telephone" placeholder="031-2603191"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>মোবাইল</label><input id="o-mobile" placeholder="01836-672980"></div>
+        <div class="form-group-modal"><label>ই-মেইল</label><input id="o-email" placeholder="example@mail.com"></div>
+      </div>
+      <div class="form-group-modal">
+        <label>ছবি আপলোড (JPG/PNG/WEBP, max 2MB)</label>
+        <input id="o-photo" type="file" accept="image/png,image/jpeg,image/webp">
+        <img id="o-photo-preview" class="photo-preview" src="media/profile.jpeg" alt="Preview">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('officer')">বাতিল</button>
+      <button class="btn-save" onclick="saveOfficerProfile()">💾 সংরক্ষণ করুন</button>
+    </div>
   </div>
 </div>
 

@@ -63,6 +63,18 @@ CREATE TABLE IF NOT EXISTS programs (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS officer_profile (
+  id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  name VARCHAR(190) NOT NULL,
+  designation VARCHAR(190) NOT NULL,
+  join_date DATE NULL,
+  telephone VARCHAR(64) NULL,
+  mobile VARCHAR(64) NULL,
+  email VARCHAR(190) NULL,
+  photo_path VARCHAR(255) NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT IGNORE INTO users (id, name, username, password_hash, role, union_name, status) VALUES
   (1, 'Upazila Executive Officer', 'admin', '$2y$10$QyHCghCCjy3X1MiQdff2x.GHF/N7Bg9wvr305x8KjOqGevVUpaxfm', 'admin', 'all', 'active'),
   (2, 'Data Viewer', 'viewer', '$2y$10$39acwFZ2LvPIkMRglBvWxuGtcoig9M/CBtIB2vqIBFeGLIqfDORcW', 'viewer', 'all', 'active');
@@ -92,3 +104,6 @@ INSERT IGNORE INTO institutions (id, name, type, union_name, students, head, pho
   (2, 'Hathazari Govt College', 'College', 'Hathazari Paurashava', 3500, 'Abdul Mannan', '01711-222333', 'Hathazari Paurashava'),
   (3, 'Fatepur Govt Primary School', 'Primary School', 'Fatepur', 450, 'Rahima Akter', '01922-333444', 'Fatepur Union'),
   (4, 'Al-Jamiya Arabia Madrasa', 'Madrasa', 'Hathazari Paurashava', 5000, 'Mufti Ahmad Shafi', '01811-444555', 'Hathazari Paurashava');
+
+INSERT IGNORE INTO officer_profile (id, name, designation, join_date, telephone, mobile, email, photo_path) VALUES
+  (1, 'জনাব মুহাম্মদ আব্দুল্লাহ আল মুমিন', 'উপজেলা নির্বাহী অফিসার', '2025-07-28', '031-2603191', '01836-672980', 'unohathazari@mopa.gov.bd', 'media/profile.jpeg');

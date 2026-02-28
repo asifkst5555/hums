@@ -67,6 +67,7 @@ const state = {
   beneficiariesMeta: { total: 0, page: 1, pageSize: 50, totalPages: 1 },
   benVisibleColumns: getVisibleBenColumns(),
   beneficiaryPrograms: [],
+  officerProfile: null,
   institutionTypes: [],
   institutions: [],
   users: [],
@@ -120,6 +121,31 @@ function notify(message, type = 'error', opts = {}) {
     return;
   }
   showToast(message, type, opts.timeoutMs || 3200);
+}
+
+function toBnDigits(input) {
+  const map = { 0: '০', 1: '১', 2: '২', 3: '৩', 4: '৪', 5: '৫', 6: '৬', 7: '৭', 8: '৮', 9: '৯' };
+  return String(input).replace(/\d/g, (d) => map[d] || d);
+}
+
+function updateTopDateTime() {
+  const el = document.getElementById('topDateTime');
+  if (!el) return;
+
+  const now = new Date();
+  const bnMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  const day = toBnDigits(now.getDate());
+  const month = bnMonths[now.getMonth()];
+  const year = toBnDigits(now.getFullYear());
+
+  let hour = now.getHours();
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  const minute = String(now.getMinutes()).padStart(2, '0');
+
+  const hourBn = toBnDigits(String(hour).padStart(2, '0'));
+  const minuteBn = toBnDigits(minute);
+  el.textContent = `${day} ${month}, ${year} — ${hourBn}:${minuteBn} ${ampm}`;
 }
 
 async function api(path, options = {}) {
@@ -206,6 +232,9 @@ function applyRoleVisibility() {
   document.querySelectorAll('.admin-only').forEach((el) => {
     el.style.display = canEdit ? '' : 'none';
   });
+  document.querySelectorAll('.admin-strict').forEach((el) => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
   document.getElementById('adminNav').style.display = isAdmin ? '' : 'none';
 }
 
@@ -249,7 +278,7 @@ async function loadDuplicateList() {
 }
 
 async function loadData() {
-  const [insts, unions, dupCount, users, report, programs, instTypes] = await Promise.allSettled([
+  const [insts, unions, dupCount, users, report, programs, instTypes, officer] = await Promise.allSettled([
     api('/api/institutions/index.php'),
     api('/api/unions/index.php'),
     api('/api/duplicate/count.php'),
@@ -257,6 +286,7 @@ async function loadData() {
     api('/api/report/overview.php'),
     api('/api/beneficiaries/programs.php'),
     api('/api/institutions/types.php'),
+    api('/api/officer/profile.php'),
   ]);
 
   state.institutions = insts.status === 'fulfilled' ? insts.value : [];
@@ -267,6 +297,7 @@ async function loadData() {
   state.dashboardReport = report.status === 'fulfilled' ? report.value : null;
   state.beneficiaryPrograms = programs.status === 'fulfilled' ? programs.value : [];
   state.institutionTypes = instTypes.status === 'fulfilled' ? instTypes.value : [];
+  state.officerProfile = officer.status === 'fulfilled' ? officer.value : null;
   filteredInst = [...state.institutions];
   renderBeneficiaryProgramFilter();
   renderInstitutionTypeOptions();
@@ -283,8 +314,31 @@ async function refreshAll() {
   updateStats();
   renderRecent();
   renderAdvancedReport();
+  renderOfficerProfile();
   renderProgramsPanel();
   document.getElementById('dupList').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">দ্বৈত তালিকা দেখতে এই পেইজে প্রবেশ করুন</td></tr>';
+}
+
+function renderOfficerProfile() {
+  const p = state.officerProfile;
+  if (!p) return;
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value || '-';
+  };
+  setText('officerName', p.name);
+  setText('officerDesignation', p.designation);
+  setText('officerDesignationTag', p.designation);
+  setText('officerJoinDate', p.joinDate || '-');
+  setText('officerTelephone', p.telephone || '-');
+  setText('officerMobile', p.mobile || '-');
+  setText('officerEmail', p.email || '-');
+
+  const img = document.getElementById('officerPhoto');
+  if (img && p.photoPath) {
+    const stamp = encodeURIComponent(String(p.updatedAt || Date.now()));
+    img.src = `${p.photoPath}?t=${stamp}`;
+  }
 }
 
 function benStatusLabel(value) {
@@ -755,6 +809,14 @@ function clearForm(type) {
     const input = document.getElementById('p-name');
     if (input) input.value = '';
   }
+  if (type === 'officer') {
+    ['o-name', 'o-designation', 'o-join-date', 'o-telephone', 'o-mobile', 'o-email'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const file = document.getElementById('o-photo');
+    if (file) file.value = '';
+  }
 }
 
 function checkNidLive(nid) {
@@ -864,6 +926,70 @@ async function saveProgram() {
   }
 }
 
+function openOfficerModal() {
+  const p = state.officerProfile;
+  if (!p) {
+    notify('Officer profile load হয়নি, আবার চেষ্টা করুন', 'error');
+    return;
+  }
+  document.getElementById('o-name').value = p.name || '';
+  document.getElementById('o-designation').value = p.designation || '';
+  document.getElementById('o-join-date').value = p.joinDate || '';
+  document.getElementById('o-telephone').value = p.telephone || '';
+  document.getElementById('o-mobile').value = p.mobile || '';
+  document.getElementById('o-email').value = p.email || '';
+  const preview = document.getElementById('o-photo-preview');
+  if (preview) preview.src = p.photoPath || 'media/profile.jpeg';
+  const file = document.getElementById('o-photo');
+  if (file) file.value = '';
+  openModal('officer', false);
+}
+
+async function saveOfficerProfile() {
+  const payload = {
+    name: document.getElementById('o-name').value.trim(),
+    designation: document.getElementById('o-designation').value.trim(),
+    joinDate: document.getElementById('o-join-date').value,
+    telephone: document.getElementById('o-telephone').value.trim(),
+    mobile: document.getElementById('o-mobile').value.trim(),
+    email: document.getElementById('o-email').value.trim(),
+  };
+  if (!payload.name || !payload.designation) {
+    notify('নাম এবং পদবি আবশ্যক', 'info');
+    return;
+  }
+
+  try {
+    const profile = await api('/api/officer/profile.php', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    const fileInput = document.getElementById('o-photo');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const form = new FormData();
+      form.append('photo', fileInput.files[0]);
+      const res = await fetch(withBase('/api/officer/photo.php'), {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(result?.error || 'Photo upload failed');
+      }
+      profile.photoPath = result.photoPath || profile.photoPath;
+    }
+
+    state.officerProfile = profile;
+    renderOfficerProfile();
+    closeModal('officer');
+    notify('অফিসার তথ্য আপডেট হয়েছে', 'success');
+  } catch (err) {
+    notify(err.message || 'Update failed', 'error');
+  }
+}
+
 function editBen(id) {
   const b = state.beneficiaries.find((x) => x.id === id);
   if (!b) return;
@@ -960,8 +1086,16 @@ async function checkDuplicate() {
 function afterLogin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.getElementById('currentUserLabel').textContent =
-    currentUser.name + ' (' + (currentUser.role === 'admin' ? 'অ্যাডমিন' : currentUser.role === 'viewer' ? 'দর্শক' : 'অপারেটর') + ')';
+  const roleBn = currentUser.role === 'admin' ? 'অ্যাডমিন' : currentUser.role === 'viewer' ? 'দর্শক' : 'অপারেটর';
+  const roleTitle = currentUser.role === 'admin' ? 'প্রশাসক' : currentUser.role === 'viewer' ? 'ভিউয়ার' : 'অপারেটর';
+  document.getElementById('currentUserLabel').textContent = roleBn;
+  const sub = document.getElementById('currentUserSub');
+  if (sub) sub.textContent = roleTitle;
+  const avatar = document.querySelector('.user-avatar');
+  if (avatar) {
+    avatar.textContent = currentUser.role === 'admin' ? 'অ' : currentUser.role === 'viewer' ? 'দ' : 'ও';
+  }
+  updateTopDateTime();
 
   applyRoleVisibility();
   refreshAll();
@@ -980,6 +1114,25 @@ async function boot() {
       menu.classList.remove('open');
     }
   });
+  const photoInput = document.getElementById('o-photo');
+  if (photoInput) {
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files && photoInput.files[0];
+      const preview = document.getElementById('o-photo-preview');
+      if (!preview) return;
+      if (!file) {
+        preview.src = state.officerProfile?.photoPath || 'media/profile.jpeg';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = String(reader.result || '');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  updateTopDateTime();
+  setInterval(updateTopDateTime, 1000);
 
   try {
     const result = await api('/api/auth/me.php');

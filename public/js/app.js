@@ -81,6 +81,46 @@ let editingId = { ben: null, inst: null, user: null, program: null };
 let filteredInst = [];
 let benSearchDebounce = null;
 const benQuery = { page: 1, pageSize: 50, q: '', program: '' };
+const MOBILE_BREAKPOINT = 768;
+
+function isMobileViewport() {
+  return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+function setMobileMenuExpanded(expanded) {
+  const btn = document.getElementById('mobileMenuBtn');
+  if (btn) btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
+
+function openMobileNav() {
+  if (!isMobileViewport()) return;
+  const sidebar = document.getElementById('mainSidebar');
+  const backdrop = document.getElementById('mobileNavBackdrop');
+  if (!sidebar || !backdrop) return;
+  sidebar.classList.add('mobile-open');
+  backdrop.classList.add('open');
+  document.body.classList.add('mobile-nav-open');
+  setMobileMenuExpanded(true);
+}
+
+function closeMobileNav() {
+  const sidebar = document.getElementById('mainSidebar');
+  const backdrop = document.getElementById('mobileNavBackdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('open');
+  document.body.classList.remove('mobile-nav-open');
+  setMobileMenuExpanded(false);
+}
+
+function toggleMobileNav() {
+  const sidebar = document.getElementById('mainSidebar');
+  if (!sidebar || !isMobileViewport()) return;
+  if (sidebar.classList.contains('mobile-open')) {
+    closeMobileNav();
+  } else {
+    openMobileNav();
+  }
+}
 
 function esc(value) {
   return String(value ?? '')
@@ -129,8 +169,8 @@ function toBnDigits(input) {
 }
 
 function updateTopDateTime() {
-  const el = document.getElementById('topDateTime');
-  if (!el) return;
+  const targets = [document.getElementById('topDateTime'), document.getElementById('topDateTimeMobile')].filter(Boolean);
+  if (!targets.length) return;
 
   const now = new Date();
   const bnMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
@@ -145,7 +185,10 @@ function updateTopDateTime() {
 
   const hourBn = toBnDigits(String(hour).padStart(2, '0'));
   const minuteBn = toBnDigits(minute);
-  el.textContent = `${day} ${month}, ${year} — ${hourBn}:${minuteBn} ${ampm}`;
+  const value = `${day} ${month}, ${year} — ${hourBn}:${minuteBn} ${ampm}`;
+  targets.forEach((el) => {
+    el.textContent = value;
+  });
 }
 
 async function api(path, options = {}) {
@@ -254,6 +297,7 @@ async function doLogout() {
   }
 
   currentUser = null;
+  closeMobileNav();
   document.getElementById('loginScreen').style.display = 'grid';
   document.getElementById('app').style.display = 'none';
 }
@@ -281,6 +325,9 @@ function showPage(name) {
   });
   if (name === 'duplicate') {
     loadDuplicateList();
+  }
+  if (isMobileViewport()) {
+    closeMobileNav();
   }
 }
 
@@ -1253,14 +1300,20 @@ function afterLogin() {
   document.getElementById('app').style.display = 'block';
   const roleBn = currentUser.role === 'admin' ? 'অ্যাডমিন' : currentUser.role === 'viewer' ? 'দর্শক' : 'অপারেটর';
   const roleTitle = currentUser.role === 'admin' ? 'প্রশাসক' : currentUser.role === 'viewer' ? 'ভিউয়ার' : 'অপারেটর';
-  document.getElementById('currentUserLabel').textContent = roleBn;
-  const sub = document.getElementById('currentUserSub');
-  if (sub) sub.textContent = roleTitle;
-  const avatar = document.querySelector('.user-avatar');
-  if (avatar) {
-    avatar.textContent = currentUser.role === 'admin' ? 'অ' : currentUser.role === 'viewer' ? 'দ' : 'ও';
-  }
+  const labels = [document.getElementById('currentUserLabel'), document.getElementById('currentUserLabelMobile')].filter(Boolean);
+  labels.forEach((el) => {
+    el.textContent = roleBn;
+  });
+  const subs = [document.getElementById('currentUserSub'), document.getElementById('currentUserSubMobile')].filter(Boolean);
+  subs.forEach((el) => {
+    el.textContent = roleTitle;
+  });
+  const avatarText = currentUser.role === 'admin' ? 'অ' : currentUser.role === 'viewer' ? 'দ' : 'ও';
+  document.querySelectorAll('.user-avatar').forEach((avatar) => {
+    avatar.textContent = avatarText;
+  });
   updateTopDateTime();
+  closeMobileNav();
 
   applyRoleVisibility();
   refreshAll();
@@ -1306,6 +1359,16 @@ async function boot() {
       reader.readAsDataURL(file);
     });
   }
+  window.addEventListener('resize', () => {
+    if (!isMobileViewport()) {
+      closeMobileNav();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeMobileNav();
+    }
+  });
   updateTopDateTime();
   setInterval(updateTopDateTime, 1000);
 

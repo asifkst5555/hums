@@ -256,6 +256,35 @@
   .logo-text { min-width: 0; }
   .app-header .logo span { display: block; font-size: 11px; font-weight: 400; opacity: .75; font-family: 'Hind Siliguri', sans-serif; }
   .header-btns { display: flex; gap: 8px; align-items: center; }
+  .mobile-menu-btn {
+    display: none;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.3);
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    cursor: pointer;
+    position: relative;
+    transition: background .2s, border-color .2s;
+  }
+  .mobile-menu-btn .line {
+    position: absolute;
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: #fff;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+  .mobile-menu-btn .line:nth-child(1) { transform: translateY(-6px); }
+  .mobile-menu-btn .line:nth-child(2) { transform: translateY(0); }
+  .mobile-menu-btn .line:nth-child(3) { transform: translateY(6px); }
+  .mobile-menu-btn:hover { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.42); }
+  body.mobile-nav-open .mobile-menu-btn .line:nth-child(1) { transform: rotate(45deg); }
+  body.mobile-nav-open .mobile-menu-btn .line:nth-child(2) { opacity: 0; }
+  body.mobile-nav-open .mobile-menu-btn .line:nth-child(3) { transform: rotate(-45deg); }
   .top-datetime {
     color: rgba(247,255,251,.95);
     font-size: 17px;
@@ -333,6 +362,21 @@
     margin-top: auto;
     padding: 12px;
   }
+  .mobile-drawer-logout {
+    display: none;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #1f6f47, #1a5a39);
+    border: 1px solid #2a7a52;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(22, 73, 48, .18);
+  }
+  .mobile-drawer-logout:hover { background: linear-gradient(135deg, #1d6641, #174f32); }
   .sidebar-info-card {
     background: linear-gradient(135deg, #1f6b43, #2e8754);
     border-radius: 16px;
@@ -353,9 +397,19 @@
     color: rgba(255,255,255,.78);
     font-weight: 600;
   }
+  .mobile-nav-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 26, 17, .45);
+    z-index: 95;
+  }
+  .mobile-sidebar-top {
+    display: none;
+  }
 
   /* CONTENT */
-  .content { flex: 1; padding: 26px 28px; overflow-y: auto; }
+  .content { flex: 1; padding: 26px 28px; overflow-y: auto; min-width: 0; }
   .page { display: none; }
   .page.active { display: block; }
   .page-header { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
@@ -391,6 +445,10 @@
     box-shadow: 0 4px 16px rgba(26, 74, 46, 0.08);
     border: 1px solid #cfe0d4;
     overflow: hidden;
+  }
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .table-toolbar { padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface2); }
   .search-box { flex: 1; min-width: 200px; padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Hind Siliguri', sans-serif; background: white; }
@@ -865,39 +923,148 @@
     .login-card { padding: 22px 16px; border-radius: 14px; }
     .login-logo h1 { font-size: 25px; }
     .login-intro h2 { font-size: 29px; }
-    .sidebar { display: none; }
+    .mobile-menu-btn {
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+    .sidebar {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 110;
+      width: min(84vw, 280px);
+      height: 100dvh;
+      border-right: none;
+      border-left: 1px solid #cfe0d4;
+      box-shadow: 0 12px 28px rgba(9, 29, 19, .28);
+      background: linear-gradient(180deg, #ffffff 0%, #f3f8f5 100%);
+      overflow-y: auto;
+      padding: 0;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+    .sidebar.mobile-open { display: flex; }
+    .mobile-nav-backdrop.open { display: block; }
+    body.mobile-nav-open { overflow: hidden; }
+    .mobile-sidebar-top {
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: linear-gradient(135deg, #16492f, #1f6842);
+      color: #fff;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.22);
+    }
+    .mobile-sidebar-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .mobile-side-title {
+      font-size: 13px;
+      font-weight: 700;
+      opacity: .95;
+      letter-spacing: .2px;
+    }
+    .mobile-side-close {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 9px;
+      background: rgba(255,255,255,.14);
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .mobile-side-date {
+      font-size: 12px;
+      color: rgba(255,255,255,.86);
+      margin-bottom: 8px;
+      font-weight: 600;
+      word-break: break-word;
+    }
+    .mobile-side-user-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mobile-user-badge {
+      flex: 1;
+      min-width: 0;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 12px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mobile-user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e9b22c;
+      color: #143f28;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+    .mobile-user-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+    }
+    .mobile-user-main {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mobile-user-sub {
+      font-size: 10px;
+      color: rgba(255,255,255,.84);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mobile-drawer-logout { display: inline-flex; }
     .content { padding: 16px; }
     .app-header {
       height: auto;
-      min-height: 58px;
-      padding: 10px 12px;
-      flex-wrap: wrap;
+      min-height: 62px;
+      padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+      flex-wrap: nowrap;
+      gap: 10px;
     }
-    .site-logo { width: 32px; height: 32px; }
-    .app-header .logo { font-size: 15px; }
-    .header-btns {
-      width: 100%;
-      justify-content: flex-end;
+    .site-logo { width: 30px; height: 30px; border-radius: 8px; }
+    .app-header .logo { font-size: 14px; min-width: 0; }
+    .mobile-menu-btn { order: 3; }
+    .app-header .logo { order: 1; }
+    .logo-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .top-datetime {
-      width: 100%;
-      order: -1;
-      text-align: right;
-      padding-right: 0;
-      font-size: 13px;
-      margin-bottom: 2px;
-    }
-    .user-badge {
-      max-width: 70vw;
-      padding: 4px 10px;
-    }
-    .user-text-main { font-size: 13px; }
-    .user-text-sub { font-size: 10px; }
+    .app-header .logo span { font-size: 10px; margin-top: 2px; }
+    .header-btns { display: none; }
     .table-toolbar { padding: 12px; }
     .search-box {
       min-width: 100%;
       flex-basis: 100%;
     }
+    .filter-select,
+    .btn,
+    .column-btn,
+    .pager-btn { min-height: 40px; }
     .filter-select { width: 100%; }
     .column-picker {
       margin-left: 0;
@@ -915,7 +1082,15 @@
       width: 100%;
     }
     .toolbar-actions .btn {
-      flex: 1 1 auto;
+      flex: 1 1 calc(50% - 8px);
+      justify-content: center;
+    }
+    .dup-check-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .dup-check-row .btn {
+      width: 100%;
       justify-content: center;
     }
     #programsPanel {
@@ -941,6 +1116,10 @@
     .modal-footer { padding-left: 16px; padding-right: 16px; }
     .page-title { font-size: 20px; }
     .btn { padding: 8px 12px; }
+    .toolbar-actions .btn { flex: 1 1 100%; }
+    .column-menu {
+      width: min(280px, calc(100vw - 36px));
+    }
   }
   @media(max-height: 860px) {
     .login-hero { padding: 26px 22px; }
@@ -1025,6 +1204,11 @@
 <!-- APP -->
 <div id="app">
   <header class="app-header">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="মেনু খুলুন" aria-expanded="false" aria-controls="mainSidebar">
+      <span class="line"></span>
+      <span class="line"></span>
+      <span class="line"></span>
+    </button>
     <div class="logo">
       <img class="site-logo" src="media/favicon.png" alt="HUMS Logo">
       <div class="logo-text">হাটহাজারী উপজেলা তথ্য ব্যবস্থাপনা <span>Hathazari Upazila Management System (HUMS)</span></div>
@@ -1042,7 +1226,23 @@
     </div>
   </header>
   <div class="app-layout">
-    <nav class="sidebar">
+    <nav id="mainSidebar" class="sidebar">
+      <div class="mobile-sidebar-top">
+        <div class="mobile-sidebar-topbar">
+          <div class="mobile-side-title">HUMS Navigation</div>
+          <button class="mobile-side-close" onclick="closeMobileNav()" aria-label="মেনু বন্ধ করুন">✕</button>
+        </div>
+        <div id="topDateTimeMobile" class="mobile-side-date">...</div>
+        <div class="mobile-side-user-row">
+          <div class="mobile-user-badge">
+            <span class="mobile-user-avatar user-avatar">অ</span>
+            <span class="mobile-user-text">
+              <span id="currentUserLabelMobile" class="mobile-user-main">অ্যাডমিন</span>
+              <span id="currentUserSubMobile" class="mobile-user-sub">সিস্টেম ব্যবহারকারী</span>
+            </span>
+          </div>
+        </div>
+      </div>
       <div class="sidebar-section">
         <div class="sidebar-label">প্রধান মেনু</div>
         <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> ড্যাশবোর্ড</div>
@@ -1057,12 +1257,14 @@
         <div class="nav-item" onclick="showPage('users')"><span class="icon">🔐</span> ব্যবহারকারী</div>
       </div>
       <div class="sidebar-bottom">
+        <button class="btn-logout mobile-drawer-logout" onclick="doLogout()">↩ লগআউট</button>
         <div class="sidebar-info-card">
           <div class="sidebar-info-title">📍 হাটহাজারী উপজেলা</div>
           <div class="sidebar-info-sub">চট্টগ্রাম জেলা, বাংলাদেশ</div>
         </div>
       </div>
     </nav>
+    <div id="mobileNavBackdrop" class="mobile-nav-backdrop" onclick="closeMobileNav()"></div>
 
     <main class="content">
       <!-- DASHBOARD -->
@@ -1172,7 +1374,7 @@
               <div id="benColumnsMenu" class="column-menu"></div>
             </div>
           </div>
-          <div style="overflow-x:auto"><table id="benTable">
+          <div class="table-scroll"><table id="benTable">
             <thead><tr id="benHead"></tr></thead>
             <tbody id="benBody"></tbody>
           </table></div>
@@ -1203,7 +1405,7 @@
               <option value="">সকল ধরন</option>
             </select>
           </div>
-          <div style="overflow-x:auto"><table id="instTable">
+          <div class="table-scroll"><table id="instTable">
             <thead><tr><th>#</th><th>প্রতিষ্ঠানের নাম</th><th>ধরন</th><th>ইউনিয়ন</th><th>ছাত্রছাত্রী</th><th>প্রধান শিক্ষক</th><th>ফোন</th><th>কার্যক্রম</th></tr></thead>
             <tbody id="instBody"></tbody>
           </table></div>
@@ -1230,20 +1432,22 @@
         <div class="table-container" style="padding:24px;max-width:600px">
           <div style="margin-bottom:20px">
             <label style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-muted)">NID নম্বর বা ফোন নম্বর দিন:</label>
-            <div style="display:flex;gap:10px">
+            <div class="dup-check-row" style="display:flex;gap:10px">
               <input id="dupSearchInput" class="search-box" style="flex:1" placeholder="যেমন: 1234567890123">
               <button class="btn btn-add" onclick="checkDuplicate()">যাচাই করুন</button>
             </div>
           </div>
           <div id="dupResult"></div>
         </div>
-        <div style="margin-top:24px">
-          <div class="page-title" style="font-size:16px;margin-bottom:14px">⚠️ সম্ভাব্য দ্বৈত তালিকা</div>
-          <div class="table-container">
-            <table><thead><tr><th>নাম</th><th>NID</th><th>কার্যক্রম ১</th><th>কার্যক্রম ২</th><th>অবস্থা</th></tr></thead>
-            <tbody id="dupList"></tbody></table>
+          <div style="margin-top:24px">
+            <div class="page-title" style="font-size:16px;margin-bottom:14px">⚠️ সম্ভাব্য দ্বৈত তালিকা</div>
+            <div class="table-container">
+              <div class="table-scroll">
+                <table><thead><tr><th>নাম</th><th>NID</th><th>কার্যক্রম ১</th><th>কার্যক্রম ২</th><th>অবস্থা</th></tr></thead>
+                <tbody id="dupList"></tbody></table>
+              </div>
+            </div>
           </div>
-        </div>
       </div>
 
       <!-- USERS (Admin) -->
@@ -1253,7 +1457,7 @@
           <button class="btn btn-add" onclick="openModal('user')">+ নতুন ব্যবহারকারী</button>
         </div>
         <div class="table-container">
-          <div style="overflow-x:auto"><table id="userTable">
+          <div class="table-scroll"><table id="userTable">
             <thead><tr><th>#</th><th>নাম</th><th>ব্যবহারকারী নাম</th><th>ভূমিকা</th><th>ইউনিয়ন</th><th>অবস্থা</th><th>কার্যক্রম</th></tr></thead>
             <tbody id="userBody"></tbody>
           </table></div>

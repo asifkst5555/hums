@@ -29,6 +29,23 @@ const BEN_COLUMN_DEFS = [
   { key: 'status', label: 'অবস্থা' },
 ];
 const DEFAULT_VISIBLE_BEN_COLUMNS = ['name', 'nid', 'program', 'union', 'phone', 'status'];
+const MOSQUE_COL_STORAGE_KEY = 'hums_mosque_visible_columns_v2';
+const MOSQUE_COLUMN_DEFS = [
+  { key: 'name', label: 'মসজিদের নাম' },
+  { key: 'union', label: 'ইউনিয়ন' },
+  { key: 'wardNo', label: 'ওয়ার্ড' },
+  { key: 'addr', label: 'ঠিকানা' },
+  { key: 'mosqueType', label: 'মসজিদের ধরন' },
+  { key: 'khatibName', label: 'খতিবের নাম' },
+  { key: 'khatibPhone', label: 'খতিবের মোবাইল' },
+  { key: 'imamName', label: 'ইমামের নাম' },
+  { key: 'imamPhone', label: 'ইমামের মোবাইল' },
+  { key: 'muazzinName', label: 'মুয়াজ্জিনের নাম' },
+  { key: 'muazzinPhone', label: 'মুয়াজ্জিনের মোবাইল' },
+  { key: 'madrasaPresent', label: 'মাদরাসা আছে' },
+  { key: 'madrasaName', label: 'মাদরাসার নাম' },
+];
+const DEFAULT_VISIBLE_MOSQUE_COLUMNS = ['name', 'union', 'wardNo', 'imamName', 'imamPhone', 'addr'];
 
 function getVisibleBenColumns() {
   let parsed = null;
@@ -45,6 +62,24 @@ function getVisibleBenColumns() {
 
 function saveVisibleBenColumns(columns) {
   localStorage.setItem(BEN_COL_STORAGE_KEY, JSON.stringify(columns));
+}
+
+
+function getVisibleMosqueColumns() {
+  let parsed = null;
+  try {
+    parsed = JSON.parse(localStorage.getItem(MOSQUE_COL_STORAGE_KEY) || '[]');
+  } catch {
+    parsed = [];
+  }
+  const keys = new Set(MOSQUE_COLUMN_DEFS.map((c) => c.key));
+  const valid = Array.isArray(parsed) ? parsed.filter((k) => keys.has(k)) : [];
+  if (valid.length) return valid;
+  return [...DEFAULT_VISIBLE_MOSQUE_COLUMNS];
+}
+
+function saveVisibleMosqueColumns(columns) {
+  localStorage.setItem(MOSQUE_COL_STORAGE_KEY, JSON.stringify(columns));
 }
 
 var appBaseCache = null;
@@ -66,10 +101,13 @@ const state = {
   beneficiaries: [],
   beneficiariesMeta: { total: 0, page: 1, pageSize: 50, totalPages: 1 },
   benVisibleColumns: getVisibleBenColumns(),
+  mosqueVisibleColumns: getVisibleMosqueColumns(),
+  mosqueMeta: { total: 0, page: 1, pageSize: 50, totalPages: 1 },
   beneficiaryPrograms: [],
   officerProfile: null,
   institutionTypes: [],
   institutions: [],
+  mosques: [],
   users: [],
   unions: [],
   duplicateGroups: [],
@@ -77,10 +115,13 @@ const state = {
   dashboardReport: null,
 };
 
-let editingId = { ben: null, inst: null, user: null, program: null };
+let editingId = { ben: null, inst: null, mosque: null, user: null, program: null };
 let filteredInst = [];
+let filteredMosques = [];
 let benSearchDebounce = null;
+let mosqueSearchDebounce = null;
 const benQuery = { page: 1, pageSize: 50, q: '', program: '' };
+const mosqueQuery = { page: 1, pageSize: 50, q: '', union: '' };
 const MOBILE_BREAKPOINT = 768;
 
 function isMobileViewport() {
@@ -120,6 +161,14 @@ function toggleMobileNav() {
   } else {
     openMobileNav();
   }
+}
+
+function cleanMosqueText(value) {
+  return String(value ?? '')
+    .replaceAll('\u221A', ' ')
+    .replaceAll('\uF050', ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function esc(value) {
@@ -448,6 +497,193 @@ function exportBeneficiariesCsv() {
   window.location.href = url;
 }
 
+
+function buildMosqueRowsForCurrentFilter() {
+  const q = String(mosqueQuery.q || '').trim().toLowerCase();
+  const union = String(mosqueQuery.union || '').trim();
+  return state.mosques.filter((m) => {
+    const matchesQuery = !q || [m.name, m.union, m.wardNo, m.addr, m.mosqueType, m.khatibName, m.khatibPhone, m.imamName, m.imamPhone, m.muazzinName, m.muazzinPhone, m.madrasaName].some((value) => String(value || '').toLowerCase().includes(q));
+    const matchesUnion = !union || String(m.union || '') === union;
+    return matchesQuery && matchesUnion;
+  });
+}
+
+function recalcMosqueList() {
+  const rows = buildMosqueRowsForCurrentFilter();
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / mosqueQuery.pageSize));
+  if (mosqueQuery.page > totalPages) mosqueQuery.page = totalPages;
+  const offset = (mosqueQuery.page - 1) * mosqueQuery.pageSize;
+  filteredMosques = rows.slice(offset, offset + mosqueQuery.pageSize);
+  state.mosqueMeta = {
+    total,
+    page: mosqueQuery.page,
+    pageSize: mosqueQuery.pageSize,
+    totalPages,
+  };
+}
+
+function mosqueMadrasaLabel(value) {
+  return value === 'yes' ? '\u09B9\u09CD\u09AF\u09BE\u0981' : '\u09A8\u09BE';
+}
+
+function formatMosqueCell(columnKey, m) {
+  const value = ['name', 'union', 'wardNo', 'addr', 'mosqueType', 'khatibName', 'imamName', 'muazzinName', 'madrasaName', 'imam'].includes(columnKey) ? cleanMosqueText(m?.[columnKey]) : m?.[columnKey];
+  if (columnKey === 'name') return `<strong>${esc(value || '-')}</strong>`;
+  if (columnKey === 'union') return `<span style="font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15px">${esc(value || '-')}</span>`;
+  if (columnKey === 'wardNo') return `<span style="font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15px">${esc(value || '-')}</span>`;
+  if (['khatibPhone', 'imamPhone', 'muazzinPhone'].includes(columnKey)) return `<span style="font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15px">${esc(value || '-')}</span>`;
+  if (columnKey === 'mosqueType') return `<span class="status-badge" style="background:#e8f0fa;color:#2c5aa0">${esc(value || '-')}</span>`;
+  if (columnKey === 'madrasaPresent') return `<span class="status-badge ${value === 'yes' ? 'status-active' : 'status-inactive'}">${mosqueMadrasaLabel(value)}</span>`;
+  return esc(value || '-');
+}
+
+function buildMosquesPrintHtml() {
+  const visibleCols = state.mosqueVisibleColumns.length ? state.mosqueVisibleColumns : [...DEFAULT_VISIBLE_MOSQUE_COLUMNS];
+  const selectedDefs = MOSQUE_COLUMN_DEFS.filter((c) => visibleCols.includes(c.key));
+  const now = new Date().toLocaleString('bn-BD');
+  const filterText = mosqueQuery.q ? `খোঁজ: ${mosqueQuery.q}` : 'খোঁজ: নেই';
+  const unionText = mosqueQuery.union ? `ইউনিয়ন: ${mosqueQuery.union}` : 'ইউনিয়ন: সকল';
+  const rows = buildMosqueRowsForCurrentFilter();
+  const bodyRows = rows.map((m, i) => `<tr><td>${i + 1}</td>${selectedDefs.map((c) => `<td>${formatMosqueCell(c.key, m)}</td>`).join('')}</tr>`).join('');
+
+  return `
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <title>মসজিদ তালিকা প্রিন্ট</title>
+  <style>
+    body{font-family:"Hind Siliguri", sans-serif; color:#143025; margin:24px;}
+    h1{font-size:20px; margin:0 0 8px;}
+    .meta{font-size:13px; margin-bottom:14px; color:#2f5d47;}
+    table{width:100%; border-collapse:collapse; font-size:12px;}
+    th,td{border:1px solid #b8cdc0; padding:7px 8px; text-align:left; vertical-align:top;}
+    th{background:#ebf4ee; font-weight:700;}
+  </style>
+</head>
+<body>
+  <h1>মসজিদ তালিকা</h1>
+  <div class="meta">প্রিন্ট সময়: ${esc(now)} | ${esc(filterText)} | ${esc(unionText)}</div>
+  <table>
+    <thead><tr><th>#</th>${selectedDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${bodyRows || `<tr><td colspan="${selectedDefs.length + 1}">কোনো রেকর্ড নেই</td></tr>`}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+function printMosques() {
+  const rows = buildMosqueRowsForCurrentFilter();
+  if (!rows.length) {
+    notify('প্রিন্ট করার জন্য কোনো ডেটা নেই', 'info');
+    return;
+  }
+  const html = buildMosquesPrintHtml();
+  const w = window.open('', '_blank', 'width=1200,height=800');
+  if (!w) {
+    notify('Popup blocked. ব্রাউজার popup allow করুন', 'info');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  const printNow = () => {
+    try {
+      w.print();
+    } catch {
+      notify('প্রিন্ট শুরু করা যাচ্ছে না। ব্রাউজার popup অনুমতি দিন', 'info');
+    }
+  };
+  w.addEventListener('load', printNow, { once: true });
+  setTimeout(printNow, 250);
+}
+
+function exportMosquesPdf() {
+  const rows = buildMosqueRowsForCurrentFilter();
+  if (!rows.length) {
+    notify('PDF এক্সপোর্ট করার জন্য কোনো ডেটা নেই', 'info');
+    return;
+  }
+  const html = buildMosquesPrintHtml();
+  const w = window.open('', '_blank', 'width=1200,height=800');
+  if (!w) {
+    notify('Popup blocked. ব্রাউজার popup allow করুন', 'info');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  const printNow = () => {
+    try {
+      w.print();
+    } catch {
+      notify('PDF export শুরু করা যাচ্ছে না। ব্রাউজার popup অনুমতি দিন', 'info');
+    }
+  };
+  w.addEventListener('load', printNow, { once: true });
+  setTimeout(printNow, 250);
+  notify('প্রিন্ট ডায়ালগে Destination থেকে Save as PDF নির্বাচন করুন', 'info', { timeoutMs: 5500 });
+}
+
+function exportMosquesCsv() {
+  const rows = buildMosqueRowsForCurrentFilter();
+  if (!rows.length) {
+    notify('CSV এক্সপোর্ট করার জন্য কোনো ডেটা নেই', 'info');
+    return;
+  }
+  const headers = ['id', 'union_name', 'ward_no', 'name', 'addr', 'mosque_type', 'khatib_name', 'khatib_phone', 'imam_name', 'imam_phone', 'muazzin_name', 'muazzin_phone', 'madrasa_present', 'madrasa_name'];
+  const csvRows = [headers.join(',')];
+  rows.forEach((m) => {
+    const values = [m.id, m.union, m.wardNo, m.name, m.addr, m.mosqueType, m.khatibName, m.khatibPhone, m.imamName, m.imamPhone, m.muazzinName, m.muazzinPhone, m.madrasaPresent, m.madrasaName].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`);
+    csvRows.push(values.join(','));
+  });
+  const blob = new Blob([`\uFEFF${csvRows.join('\n')}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mosques_${new Date().toISOString().slice(0, 19).replaceAll(':', '').replace('T', '_')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function triggerMosqueImport() {
+  const input = document.getElementById('mosqueImportFile');
+  if (!input) return;
+  input.click();
+}
+
+async function handleMosqueImport(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!/\.csv$/i.test(file.name)) {
+    notify('শুধু CSV ফাইল আপলোড করুন', 'info');
+    input.value = '';
+    return;
+  }
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const result = await apiUpload('/api/mosques/import.php', fd);
+    await refreshAll();
+    const summary = `ইমপোর্ট সম্পন্ন: নতুন ${result.inserted || 0}, আপডেট ${result.updated || 0}, স্কিপ ${result.skipped || 0}`;
+    notify(summary, 'success', { timeoutMs: 5000 });
+    if (Array.isArray(result.errors) && result.errors.length) {
+      notify(`কিছু লাইন স্কিপ: ${result.errors[0]}`, 'info', { timeoutMs: 6000 });
+    }
+  } catch (err) {
+    notify(err.message || 'ইমপোর্ট ব্যর্থ', 'error', { timeoutMs: 5000 });
+  } finally {
+    input.value = '';
+  }
+}
+
 function triggerBeneficiaryImport() {
   const input = document.getElementById('benImportFile');
   if (!input) return;
@@ -490,8 +726,9 @@ async function loadDuplicateList() {
 }
 
 async function loadData() {
-  const [insts, unions, dupCount, users, report, programs, instTypes, officer] = await Promise.allSettled([
+  const [insts, mosques, unions, dupCount, users, report, programs, instTypes, officer] = await Promise.allSettled([
     api('/api/institutions/index.php'),
+    api('/api/mosques/index.php'),
     api('/api/unions/index.php'),
     api('/api/duplicate/count.php'),
     currentUser.role === 'admin' ? api('/api/users/index.php') : Promise.resolve([]),
@@ -502,6 +739,7 @@ async function loadData() {
   ]);
 
   state.institutions = insts.status === 'fulfilled' ? insts.value : [];
+  state.mosques = mosques.status === 'fulfilled' ? mosques.value : [];
   state.unions = unions.status === 'fulfilled' ? unions.value : [];
   state.duplicateCount = dupCount.status === 'fulfilled' ? Number(dupCount.value.count || 0) : 0;
   state.duplicateGroups = [];
@@ -511,6 +749,7 @@ async function loadData() {
   state.institutionTypes = instTypes.status === 'fulfilled' ? instTypes.value : [];
   state.officerProfile = officer.status === 'fulfilled' ? officer.value : null;
   filteredInst = [...state.institutions];
+  filteredMosques = [...state.mosques];
   renderBeneficiaryProgramFilter();
   renderInstitutionTypeOptions();
   await loadBeneficiaries();
@@ -521,6 +760,10 @@ async function refreshAll() {
   renderBen();
   renderBenColumnOptions();
   renderInst();
+  recalcMosqueList();
+  renderMosqueUnionFilter();
+  renderMosqueColumnOptions();
+  renderMosques();
   renderUsers();
   renderUnions();
   updateStats();
@@ -648,6 +891,36 @@ function renderInst(data = filteredInst) {
     .join('');
 }
 
+function renderMosques(data = filteredMosques) {
+  const tbody = document.getElementById('mosqueBody');
+  const head = document.getElementById('mosqueHead');
+  if (!tbody) return;
+
+  const visibleCols = state.mosqueVisibleColumns.length ? state.mosqueVisibleColumns : [...DEFAULT_VISIBLE_MOSQUE_COLUMNS];
+  const selectedDefs = MOSQUE_COLUMN_DEFS.filter((c) => visibleCols.includes(c.key));
+
+  if (head) {
+    head.innerHTML = `<th>#</th>${selectedDefs.map((c) => `<th>${esc(c.label)}</th>`).join('')}<th>কার্যক্রম</th>`;
+  }
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="${selectedDefs.length + 2}"><div class="empty-state"><div class="icon">&#x1F54C;</div>কোনো মসজিদ রেকর্ড নেই</div></td></tr>`;
+    return;
+  }
+
+  const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+  tbody.innerHTML = data
+    .map(
+      (m, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      ${selectedDefs.map((c) => `<td>${formatMosqueCell(c.key, m)}</td>`).join('')}
+      <td><div class="table-actions">${canEdit ? `<button class="btn btn-icon btn-edit" title="সম্পাদনা" aria-label="সম্পাদনা" onclick="editMosque(${m.id})">&#x270E;</button><button class="btn btn-icon btn-delete" title="মুছুন" aria-label="মুছুন" onclick="deleteMosque(${m.id})">&#x1F5D1;</button>` : ''}</div></td>
+    </tr>`
+    )
+    .join('');
+}
+
 function renderUsers() {
   const tbody = document.getElementById('userBody');
   if (!tbody) return;
@@ -687,7 +960,8 @@ function renderUnions() {
   const benUnion = document.getElementById('b-union');
   const instUnion = document.getElementById('i-union');
   const userUnion = document.getElementById('u-union');
-  if (benUnion && instUnion && userUnion && state.unions.length) {
+  const mosqueUnion = document.getElementById('m-union');
+  if (benUnion && instUnion && userUnion && mosqueUnion && state.unions.length) {
     const unionNames = state.unions
       .filter((u) => (typeof u === 'string' ? true : Number(u.beneficiaries || 0) > 0))
       .map((u) => (typeof u === 'string' ? u : u.name));
@@ -695,6 +969,7 @@ function renderUnions() {
     benUnion.innerHTML = options;
     instUnion.innerHTML = options;
     userUnion.innerHTML = `<option value="all">সকল ইউনিয়ন</option>${options}`;
+    mosqueUnion.innerHTML = `<option value="">ইউনিয়ন নির্বাচন করুন</option>${options}`;
   }
 }
 
@@ -737,6 +1012,8 @@ function updateStats() {
   document.getElementById('s-inst').textContent = String(state.institutions.length);
   document.getElementById('benBadge').textContent = String(state.beneficiariesMeta.total);
   document.getElementById('instBadge').textContent = String(state.institutions.length);
+  const mosqueBadge = document.getElementById('mosqueBadge');
+  if (mosqueBadge) mosqueBadge.textContent = String(state.mosques.length);
   document.getElementById('s-dup').textContent = String(state.duplicateCount);
   const prog = state.dashboardReport?.totals?.uniquePrograms ?? 0;
   document.getElementById('s-prog').textContent = String(prog);
@@ -838,6 +1115,58 @@ function renderBeneficiaryProgramFilter() {
   }
 }
 
+function renderMosqueUnionFilter() {
+  const select = document.getElementById('mosqueUnionFilter');
+  if (!select) return;
+  const unions = [...new Set(state.mosques.map((m) => String(m.union || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'bn'));
+  select.innerHTML = `<option value="">সকল ইউনিয়ন</option>${unions.map((u) => `<option value="${esc(u)}">${esc(u)}</option>`).join('')}`;
+  select.value = mosqueQuery.union;
+}
+
+function renderMosqueColumnOptions() {
+  const menu = document.getElementById('mosqueColumnsMenu');
+  if (!menu) return;
+  const selected = new Set(state.mosqueVisibleColumns);
+  menu.innerHTML = MOSQUE_COLUMN_DEFS.map(
+    (c) => `
+      <label class="column-item">
+        <input
+          type="checkbox"
+          ${selected.has(c.key) ? 'checked' : ''}
+          onchange="toggleMosqueColumn('${esc(c.key)}', this.checked)"
+        >
+        <span>${esc(c.label)}</span>
+      </label>`
+  ).join('');
+}
+
+function toggleMosqueColumnsMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('mosqueColumnsMenu');
+  if (!menu) return;
+  menu.classList.toggle('open');
+}
+
+function toggleMosqueColumn(key, checked) {
+  const allowed = new Set(MOSQUE_COLUMN_DEFS.map((c) => c.key));
+  if (!allowed.has(key)) return;
+  const set = new Set(state.mosqueVisibleColumns);
+  if (checked) {
+    set.add(key);
+  } else {
+    set.delete(key);
+    if (!set.size) {
+      notify('কমপক্ষে একটি কলাম নির্বাচন করতে হবে', 'info');
+      renderMosqueColumnOptions();
+      return;
+    }
+  }
+  state.mosqueVisibleColumns = MOSQUE_COLUMN_DEFS.map((c) => c.key).filter((k) => set.has(k));
+  saveVisibleMosqueColumns(state.mosqueVisibleColumns);
+  renderMosques();
+  renderMosqueColumnOptions();
+}
+
 function renderBenColumnOptions() {
   const menu = document.getElementById('benColumnsMenu');
   if (!menu) return;
@@ -915,6 +1244,10 @@ function filterTable(type, val) {
     const input = document.getElementById('benSearchInput');
     if (input) input.value = search;
     applyBenSearch();
+  } else if (type === 'mosque') {
+    const input = document.getElementById('mosqueSearchInput');
+    if (input) input.value = search;
+    applyMosqueSearch();
   } else {
     const q = search.toLowerCase();
     filteredInst = state.institutions.filter(
@@ -933,6 +1266,14 @@ async function filterByProgram(v) {
   renderRecent();
 }
 
+
+function filterMosquesByUnion(v) {
+  mosqueQuery.union = String(v || '');
+  mosqueQuery.page = 1;
+  recalcMosqueList();
+  renderMosques();
+}
+
 function filterByType(v) {
   filteredInst = v ? state.institutions.filter((i) => i.type === v) : [...state.institutions];
   renderInst();
@@ -947,6 +1288,15 @@ async function changeBenPage(step) {
   renderRecent();
 }
 
+
+function changeMosquePage(step) {
+  const nextPage = mosqueQuery.page + step;
+  if (nextPage < 1 || nextPage > state.mosqueMeta.totalPages) return;
+  mosqueQuery.page = nextPage;
+  recalcMosqueList();
+  renderMosques();
+}
+
 async function applyBenSearch() {
   const input = document.getElementById('benSearchInput');
   benQuery.q = input ? String(input.value || '').trim() : '';
@@ -957,6 +1307,18 @@ async function applyBenSearch() {
     renderBen();
     updateStats();
     renderRecent();
+  }, 50);
+}
+
+
+function applyMosqueSearch() {
+  const input = document.getElementById('mosqueSearchInput');
+  mosqueQuery.q = input ? String(input.value || '').trim() : '';
+  mosqueQuery.page = 1;
+  if (mosqueSearchDebounce) clearTimeout(mosqueSearchDebounce);
+  mosqueSearchDebounce = setTimeout(() => {
+    recalcMosqueList();
+    renderMosques();
   }, 50);
 }
 
@@ -974,6 +1336,19 @@ async function resetBenSearch() {
   renderRecent();
 }
 
+
+function resetMosqueSearch() {
+  const input = document.getElementById('mosqueSearchInput');
+  if (input) input.value = '';
+  mosqueQuery.q = '';
+  mosqueQuery.union = '';
+  mosqueQuery.page = 1;
+  const unionFilter = document.getElementById('mosqueUnionFilter');
+  if (unionFilter) unionFilter.value = '';
+  recalcMosqueList();
+  renderMosques();
+}
+
 async function gotoBenPage(page) {
   const p = Number(page);
   if (!Number.isFinite(p)) return;
@@ -984,10 +1359,28 @@ async function gotoBenPage(page) {
   renderRecent();
 }
 
+
+function gotoMosquePage(page) {
+  const p = Number(page);
+  if (!Number.isFinite(p)) return;
+  if (p < 1 || p > state.mosqueMeta.totalPages || p === mosqueQuery.page) return;
+  mosqueQuery.page = p;
+  recalcMosqueList();
+  renderMosques();
+}
+
 function openModal(type, clear = true) {
   if (clear) {
     editingId[type] = null;
     clearForm(type);
+  }
+  if (type === 'ben') {
+    const title = document.getElementById('benModalTitle');
+    if (title) title.textContent = editingId.ben ? 'উপকারভোগী তথ্য সম্পাদনা' : 'নতুন উপকারভোগী যোগ করুন';
+  }
+  if (type === 'mosque') {
+    const title = document.getElementById('mosqueModalTitle');
+    if (title) title.textContent = editingId.mosque ? 'মসজিদ তথ্য সম্পাদনা' : 'নতুন মসজিদ যোগ করুন';
   }
   document.getElementById('modal-' + type).classList.add('open');
 }
@@ -1004,6 +1397,16 @@ function clearForm(type) {
     });
     document.getElementById('b-status').value = 'active';
     document.getElementById('benDupWarn').classList.remove('show');
+    const title = document.getElementById('benModalTitle');
+    if (title) title.textContent = 'নতুন উপকারভোগী যোগ করুন';
+  }
+  if (type === 'mosque') {
+    ['m-name', 'm-union', 'm-ward', 'm-type', 'm-khatib-name', 'm-khatib-phone', 'm-imam-name', 'm-imam-phone', 'm-muazzin-name', 'm-muazzin-phone', 'm-madrasa-name', 'm-addr'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const madrasa = document.getElementById('m-madrasa-present');
+    if (madrasa) madrasa.value = 'no';
   }
   if (type === 'inst') {
     ['i-name', 'i-head', 'i-phone', 'i-addr', 'i-students'].forEach((id) => {
@@ -1090,6 +1493,42 @@ async function saveInst() {
       await api('/api/institutions/index.php', { method: 'POST', body: JSON.stringify(payload) });
     }
     closeModal('inst');
+    await refreshAll();
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+async function saveMosque() {
+  const name = document.getElementById('m-name').value.trim();
+  const union = document.getElementById('m-union').value;
+  if (!name || !union) return notify('মসজিদের নাম ও ইউনিয়ন আবশ্যক', 'info');
+
+  const payload = {
+    name,
+    union,
+    wardNo: document.getElementById('m-ward').value.trim(),
+    mosqueType: document.getElementById('m-type').value,
+    khatibName: document.getElementById('m-khatib-name').value.trim(),
+    khatibPhone: document.getElementById('m-khatib-phone').value.trim(),
+    imamName: document.getElementById('m-imam-name').value.trim(),
+    imamPhone: document.getElementById('m-imam-phone').value.trim(),
+    muazzinName: document.getElementById('m-muazzin-name').value.trim(),
+    muazzinPhone: document.getElementById('m-muazzin-phone').value.trim(),
+    madrasaPresent: document.getElementById('m-madrasa-present').value,
+    madrasaName: document.getElementById('m-madrasa-name').value.trim(),
+    imam: document.getElementById('m-imam-name').value.trim(),
+    phone: document.getElementById('m-imam-phone').value.trim(),
+    addr: document.getElementById('m-addr').value.trim(),
+  };
+
+  try {
+    if (editingId.mosque) {
+      await api(`/api/mosques/item.php?id=${editingId.mosque}&op=update`, { method: 'POST', body: JSON.stringify(payload) });
+    } else {
+      await api('/api/mosques/index.php', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    closeModal('mosque');
     await refreshAll();
   } catch (err) {
     notify(err.message, 'error');
@@ -1207,15 +1646,17 @@ function editBen(id) {
   if (!b) return;
 
   editingId.ben = id;
+  const title = document.getElementById('benModalTitle');
+  if (title) title.textContent = 'উপকারভোগী তথ্য সম্পাদনা';
   document.getElementById('b-name').value = b.name;
   document.getElementById('b-nid').value = b.nid;
+  document.getElementById('b-prog').value = b.program;
+  document.getElementById('b-union').value = b.union;
   document.getElementById('b-phone').value = b.phone || '';
   document.getElementById('b-dob').value = b.dob || '';
   document.getElementById('b-father').value = b.father || '';
   document.getElementById('b-mother').value = b.mother || '';
   document.getElementById('b-addr').value = b.addr || '';
-  document.getElementById('b-prog').value = b.program;
-  document.getElementById('b-union').value = b.union;
   document.getElementById('b-status').value = b.status;
   openModal('ben', false);
 }
@@ -1235,6 +1676,29 @@ function editInst(id) {
   openModal('inst', false);
 }
 
+function editMosque(id) {
+  const m = state.mosques.find((x) => x.id === id);
+  if (!m) return;
+
+  editingId.mosque = id;
+  const title = document.getElementById('mosqueModalTitle');
+  if (title) title.textContent = 'মসজিদ তথ্য সম্পাদনা';
+  document.getElementById('m-name').value = m.name;
+  document.getElementById('m-union').value = m.union;
+  document.getElementById('m-ward').value = m.wardNo || '';
+  document.getElementById('m-type').value = m.mosqueType || '';
+  document.getElementById('m-khatib-name').value = m.khatibName || '';
+  document.getElementById('m-khatib-phone').value = m.khatibPhone || '';
+  document.getElementById('m-imam-name').value = m.imamName || m.imam || '';
+  document.getElementById('m-imam-phone').value = m.imamPhone || m.phone || '';
+  document.getElementById('m-muazzin-name').value = m.muazzinName || '';
+  document.getElementById('m-muazzin-phone').value = m.muazzinPhone || '';
+  document.getElementById('m-madrasa-present').value = m.madrasaPresent || 'no';
+  document.getElementById('m-madrasa-name').value = m.madrasaName || '';
+  document.getElementById('m-addr').value = m.addr || '';
+  openModal('mosque', false);
+}
+
 async function deleteBen(id) {
   if (!confirm('মুছে ফেলবেন?')) return;
   try {
@@ -1249,6 +1713,16 @@ async function deleteInst(id) {
   if (!confirm('মুছে ফেলবেন?')) return;
   try {
     await api(`/api/institutions/item.php?id=${id}&op=delete`, { method: 'POST' });
+    await refreshAll();
+  } catch (err) {
+    notify(err.message, 'error');
+  }
+}
+
+async function deleteMosque(id) {
+  if (!confirm('মুছে ফেলবেন?')) return;
+  try {
+    await api(`/api/mosques/item.php?id=${id}&op=delete`, { method: 'POST' });
     await refreshAll();
   } catch (err) {
     notify(err.message, 'error');
@@ -1336,10 +1810,9 @@ async function boot() {
     })
   );
   document.addEventListener('click', (e) => {
-    const menu = document.getElementById('benColumnsMenu');
     const trigger = e.target && typeof e.target.closest === 'function' ? e.target.closest('.column-picker') : null;
-    if (menu && !trigger) {
-      menu.classList.remove('open');
+    if (!trigger) {
+      document.querySelectorAll('.column-menu').forEach((menu) => menu.classList.remove('open'));
     }
   });
   const photoInput = document.getElementById('o-photo');

@@ -6,7 +6,7 @@
 <title>হাটহাজারী উপজেলা তথ্য ব্যবস্থাপনা সিস্টেম</title>
 <link rel="icon" type="image/png" href="media/favicon.png">
 <link rel="shortcut icon" type="image/png" href="media/favicon.png">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --primary: #1a4a2e;
@@ -1249,6 +1249,7 @@
         <div class="nav-item" onclick="showPage('union')"><span class="icon">🗺️</span> ইউনিয়ন তথ্য</div>
         <div class="nav-item" onclick="showPage('beneficiaries')"><span class="icon">👥</span> উপকারভোগী <span class="badge" id="benBadge">0</span></div>
         <div class="nav-item" onclick="showPage('institutions')"><span class="icon">🏫</span> শিক্ষা প্রতিষ্ঠান <span class="badge" id="instBadge">0</span></div>
+        <div class="nav-item" onclick="showPage('mosques')"><span class="icon">&#x1F54C;</span> &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6; &#x09A4;&#x09BE;&#x09B2;&#x09BF;&#x0995;&#x09BE; <span class="badge" id="mosqueBadge">0</span></div>
         <div class="nav-item" onclick="showPage('programs')"><span class="icon">📋</span> সামাজিক কার্যক্রম</div>
         <div class="nav-item" onclick="showPage('duplicate')"><span class="icon">🔍</span> দ্বৈত সুবিধা যাচাই</div>
       </div>
@@ -1448,6 +1449,50 @@
               </div>
             </div>
           </div>
+
+      </div>
+      <!-- MOSQUES -->
+      <div class="page" id="page-mosques">
+        <div class="page-header">
+          <div>
+            <div class="page-title">ইউনিয়ন ভিত্তিক মসজিদের তালিকা</div>
+            <div class="page-subtitle">হাটহাজারী উপজেলার ইউনিয়নভিত্তিক মসজিদের তথ্য</div>
+          </div>
+          <button class="btn btn-add admin-only" onclick="openModal('mosque')">+ নতুন মসজিদ</button>
+        </div>
+        <div class="table-container">
+          <div class="table-toolbar">
+            <input id="mosqueSearchInput" class="search-box" placeholder="মসজিদের নাম, ইমাম, ফোন দিয়ে খুঁজুন..." onkeydown="if(event.key==='Enter'){applyMosqueSearch();}">
+            <button class="btn btn-add" onclick="applyMosqueSearch()">&#x0996;&#x09C1;&#x0981;&#x099C;&#x09C1;&#x09A8;</button>
+            <button class="btn btn-cancel" style="padding:9px 14px" onclick="resetMosqueSearch()">রিসেট</button>
+            <div class="toolbar-actions">
+              <button class="btn btn-subtle" onclick="printMosques()">&#x09AA;&#x09CD;&#x09B0;&#x09BF;&#x09A8;&#x09CD;&#x099F;</button>
+              <button class="btn btn-subtle" onclick="exportMosquesPdf()">&#x098F;&#x0995;&#x09CD;&#x09B8;&#x09AA;&#x09CB;&#x09B0;&#x09CD;&#x099F; PDF</button>
+              <button class="btn btn-subtle" onclick="exportMosquesCsv()">&#x098F;&#x0995;&#x09CD;&#x09B8;&#x09AA;&#x09CB;&#x09B0;&#x09CD;&#x099F; CSV</button>
+              <button class="btn btn-subtle admin-only" onclick="triggerMosqueImport()">&#x0987;&#x09AE;&#x09AA;&#x09CB;&#x09B0;&#x09CD;&#x099F; CSV</button>
+              <input id="mosqueImportFile" type="file" accept=".csv,text/csv" style="display:none" onchange="handleMosqueImport(event)">
+            </div>
+            <select id="mosqueUnionFilter" class="filter-select" onchange="filterMosquesByUnion(this.value)">
+              <option value="">সকল ইউনিয়ন</option>
+            </select>
+            <div class="column-picker">
+              <button class="column-btn" onclick="toggleMosqueColumnsMenu(event)">&#x0995;&#x09B2;&#x09BE;&#x09AE;</button>
+              <div id="mosqueColumnsMenu" class="column-menu"></div>
+            </div>
+          </div>
+          <div class="table-scroll"><table id="mosqueTable">
+            <thead><tr id="mosqueHead"></tr></thead>
+            <tbody id="mosqueBody"></tbody>
+          </table></div>
+          <div class="table-pager">
+            <div id="mosquePageInfo">পৃষ্ঠা 1 / 1</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="mosquePrevBtn" class="pager-btn" onclick="changeMosquePage(-1)">পূর্ববর্তী</button>
+              <div id="mosquePageNumbers" class="pager-numbers"></div>
+              <button id="mosqueNextBtn" class="pager-btn" onclick="changeMosquePage(1)">পরবর্তী</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- USERS (Admin) -->
@@ -1547,21 +1592,23 @@
             <option value="">লোড হচ্ছে...</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group-modal"><label>ইউনিয়ন *</label>
           <select id="b-union">
             <option value="">লোড হচ্ছে...</option>
           </select>
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group-modal"><label>জন্ম তারিখ</label><input type="date" id="b-dob"></div>
-        <div class="form-group-modal"><label>ফোন নম্বর</label><input id="b-phone" placeholder="০১XXXXXXXXX"></div>
       </div>
       <div class="form-row">
+        <div class="form-group-modal"><label>ফোন নম্বর</label><input id="b-phone" placeholder="০১XXXXXXXXX"></div>
         <div class="form-group-modal"><label>পিতার নাম</label><input id="b-father" placeholder="পিতার নাম"></div>
-        <div class="form-group-modal"><label>মাতার নাম</label><input id="b-mother" placeholder="মাতার নাম"></div>
       </div>
-      <div class="form-group-modal"><label>বর্তমান ঠিকানা</label><input id="b-addr" placeholder="গ্রাম, ওয়ার্ড..."></div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>মাতার নাম</label><input id="b-mother" placeholder="মাতার নাম"></div>
+        <div class="form-group-modal"><label>বর্তমান ঠিকানা</label><input id="b-addr" placeholder="গ্রাম, ওয়ার্ড..."></div>
+      </div>
       <div class="form-group-modal"><label>অবস্থা</label>
         <select id="b-status"><option value="active">সক্রিয়</option><option value="inactive">নিষ্ক্রিয়</option><option value="pending">অপেক্ষমাণ</option></select>
       </div>
@@ -1608,6 +1655,62 @@
   </div>
 </div>
 
+<!-- Mosque Modal -->
+<div class="modal-overlay" id="modal-mosque">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <div class="modal-title" id="mosqueModalTitle">&#x09A8;&#x09A4;&#x09C1;&#x09A8; &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6; &#x09AF;&#x09CB;&#x0997; &#x0995;&#x09B0;&#x09C1;&#x09A8;</div>
+      <button class="modal-close" onclick="closeModal('mosque')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x0987;&#x0989;&#x09A8;&#x09BF;&#x09DF;&#x09A8; *</label>
+          <select id="m-union">
+            <option value="">&#x0987;&#x0989;&#x09A8;&#x09BF;&#x09DF;&#x09A8; &#x09A8;&#x09BF;&#x09B0;&#x09CD;&#x09AC;&#x09BE;&#x099A;&#x09A8; &#x0995;&#x09B0;&#x09C1;&#x09A8;</option>
+          </select>
+        </div>
+        <div class="form-group-modal"><label>&#x0993;&#x09DF;&#x09BE;&#x09B0;&#x09CD;&#x09A1; &#x09A8;&#x0982;</label><input id="m-ward" placeholder="&#x09AF;&#x09C7;&#x09AE;&#x09A8;: &#x09E9;&#x09A8;&#x0982; &#x0993;&#x09DF;&#x09BE;&#x09B0;&#x09CD;&#x09A1;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE; *</label><input id="m-name" placeholder="&#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;"></div>
+        <div class="form-group-modal"><label>&#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;&#x09C7;&#x09B0; &#x09A7;&#x09B0;&#x09A8;</label>
+          <select id="m-type">
+            <option value="">&#x09A8;&#x09BF;&#x09B0;&#x09CD;&#x09AC;&#x09BE;&#x099A;&#x09A8; &#x0995;&#x09B0;&#x09C1;&#x09A8;</option>
+            <option value="&#x099C;&#x09BE;&#x09AE;&#x09C7; &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;">&#x099C;&#x09BE;&#x09AE;&#x09C7; &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;</option>
+            <option value="&#x09AA;&#x09BE;&#x099E;&#x09CD;&#x099C;&#x09C7;&#x0997;&#x09BE;&#x09A8;&#x09BE; &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;">&#x09AA;&#x09BE;&#x099E;&#x09CD;&#x099C;&#x09C7;&#x0997;&#x09BE;&#x09A8;&#x09BE; &#x09AE;&#x09B8;&#x099C;&#x09BF;&#x09A6;</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group-modal"><label>&#x09A0;&#x09BF;&#x0995;&#x09BE;&#x09A8;&#x09BE;</label><input id="m-addr" placeholder="&#x0997;&#x09CD;&#x09B0;&#x09BE;&#x09AE;, &#x0993;&#x09DF;&#x09BE;&#x09B0;&#x09CD;&#x09A1;, &#x098F;&#x09B2;&#x09BE;&#x0995;&#x09BE;"></div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x0996;&#x09A4;&#x09BF;&#x09AC;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;</label><input id="m-khatib-name" placeholder="&#x0996;&#x09A4;&#x09BF;&#x09AC;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;"></div>
+        <div class="form-group-modal"><label>&#x0996;&#x09A4;&#x09BF;&#x09AC;&#x09C7;&#x09B0; &#x09AE;&#x09CB;&#x09AC;&#x09BE;&#x0987;&#x09B2;</label><input id="m-khatib-phone" placeholder="&#x09E6;&#x09E7;XXXXXXXXX"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x0987;&#x09AE;&#x09BE;&#x09AE;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;</label><input id="m-imam-name" placeholder="&#x0987;&#x09AE;&#x09BE;&#x09AE;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;"></div>
+        <div class="form-group-modal"><label>&#x0987;&#x09AE;&#x09BE;&#x09AE;&#x09C7;&#x09B0; &#x09AE;&#x09CB;&#x09AC;&#x09BE;&#x0987;&#x09B2;</label><input id="m-imam-phone" placeholder="&#x09E6;&#x09E7;XXXXXXXXX"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x09AE;&#x09C1;&#x09DF;&#x09BE;&#x099C;&#x09CD;&#x099C;&#x09BF;&#x09A8;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;</label><input id="m-muazzin-name" placeholder="&#x09AE;&#x09C1;&#x09DF;&#x09BE;&#x099C;&#x09CD;&#x099C;&#x09BF;&#x09A8;&#x09C7;&#x09B0; &#x09A8;&#x09BE;&#x09AE;"></div>
+        <div class="form-group-modal"><label>&#x09AE;&#x09C1;&#x09DF;&#x09BE;&#x099C;&#x09CD;&#x099C;&#x09BF;&#x09A8;&#x09C7;&#x09B0; &#x09AE;&#x09CB;&#x09AC;&#x09BE;&#x0987;&#x09B2;</label><input id="m-muazzin-phone" placeholder="&#x09E6;&#x09E7;XXXXXXXXX"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group-modal"><label>&#x09AE;&#x09BE;&#x09A6;&#x09B0;&#x09BE;&#x09B8;&#x09BE; &#x0986;&#x099B;&#x09C7; &#x0995;&#x09BF; &#x09A8;&#x09BE;</label>
+          <select id="m-madrasa-present">
+            <option value="no">&#x09A8;&#x09BE;</option>
+            <option value="yes">&#x09B9;&#x09CD;&#x09AF;&#x09BE;&#x0981;</option>
+          </select>
+        </div>
+        <div class="form-group-modal"><label>&#x09AE;&#x09BE;&#x09A6;&#x09B0;&#x09BE;&#x09B8;&#x09BE;&#x09B0; &#x09A8;&#x09BE;&#x09AE;</label><input id="m-madrasa-name" placeholder="&#x09A5;&#x09BE;&#x0995;&#x09B2;&#x09C7; &#x09AE;&#x09BE;&#x09A6;&#x09B0;&#x09BE;&#x09B8;&#x09BE;&#x09B0; &#x09A8;&#x09BE;&#x09AE;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('mosque')">&#x09AC;&#x09BE;&#x09A4;&#x09BF;&#x09B2;</button>
+      <button class="btn-save" onclick="saveMosque()">&#x1F4BE; &#x09B8;&#x0982;&#x09B0;&#x0995;&#x09CD;&#x09B7;&#x09A3; &#x0995;&#x09B0;&#x09C1;&#x09A8;</button>
+    </div>
+  </div>
+</div>
+
 <!-- User Modal -->
 <div class="modal-overlay" id="modal-user">
   <div class="modal">
@@ -1639,7 +1742,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260301-5"></script>
+<script src="js/app.js?v=20260407-1"></script>
 <div id="toastWrap" class="toast-wrap"></div>
 </body>
 </html>

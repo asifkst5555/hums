@@ -57,6 +57,28 @@ CREATE TABLE IF NOT EXISTS institutions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS mosques (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  union_name VARCHAR(190) NOT NULL,
+  ward_no VARCHAR(64) NULL,
+  mosque_type VARCHAR(120) NULL,
+  khatib_name VARCHAR(190) NULL,
+  khatib_phone VARCHAR(64) NULL,
+  imam_name VARCHAR(190) NULL,
+  imam_phone VARCHAR(64) NULL,
+  muazzin_name VARCHAR(190) NULL,
+  muazzin_phone VARCHAR(64) NULL,
+  madrasa_present ENUM('yes','no') NOT NULL DEFAULT 'no',
+  madrasa_name VARCHAR(255) NULL,
+  imam VARCHAR(190) NULL,
+  phone VARCHAR(64) NULL,
+  addr VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_mosques_union (union_name),
+  INDEX idx_mosques_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS programs (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(190) NOT NULL UNIQUE,
@@ -104,6 +126,23 @@ INSERT IGNORE INTO institutions (id, name, type, union_name, students, head, pho
   (2, 'Hathazari Govt College', 'College', 'Hathazari Paurashava', 3500, 'Abdul Mannan', '01711-222333', 'Hathazari Paurashava'),
   (3, 'Fatepur Govt Primary School', 'Primary School', 'Fatepur', 450, 'Rahima Akter', '01922-333444', 'Fatepur Union'),
   (4, 'Al-Jamiya Arabia Madrasa', 'Madrasa', 'Hathazari Paurashava', 5000, 'Mufti Ahmad Shafi', '01811-444555', 'Hathazari Paurashava');
+
+INSERT IGNORE INTO mosques (id, name, union_name, imam, phone, addr) VALUES
+  (1, 'Baitul Aman Jame Mosque', 'Fatepur', 'Hafiz Abdul Karim', '01812-555111', 'North Fatepur'),
+  (2, 'Jame Mosque, Mekhal Bazar', 'Mekhal', 'Moulana Shahidul Islam', '01711-555222', 'Mekhal Bazar'),
+  (3, 'Central Jame Mosque', 'Hathazari Paurashava', 'Moulana Yusuf', '01611-555333', 'Paurashava Center'),
+  (4, 'Gumanmardan Bazar Jame Mosque', 'Gumanmardan', 'Moulana Habibullah', '01911-555444', 'Gumanmardan Bazar'),
+  (5, 'Mirzapur Kazi Bari Mosque', 'Mirzapur', 'Moulana Shahjahan', '01815-555555', 'Mirzapur Kazi Bari'),
+  (6, 'Buri Char Jame Mosque', 'Buri Char', 'Hafiz Nurul Amin', '01716-555666', 'Buri Char Bazar'),
+  (7, 'Chipatoli Central Mosque', 'Chipatoli', 'Moulana Azizur Rahman', '01617-555777', 'Chipatoli Center'),
+  (8, 'Katirhat Bazar Jame Mosque', 'Katirhat', 'Moulana Fazlul Karim', '01518-555888', 'Katirhat Bazar'),
+  (9, 'Uttar Madarsa Jame Mosque', 'Uttar Madarsa', 'Moulana Abdur Rouf', '01419-555999', 'Uttar Madarsa Village'),
+  (10, 'Dakshin Madarsa Central Mosque', 'Dakshin Madarsa', 'Moulana Shafiqul Islam', '01320-556000', 'Dakshin Madarsa Center'),
+  (11, 'Dhalai Bazar Jame Mosque', 'Dhalai', 'Hafiz Mahbubul Alam', '01221-556111', 'Dhalai Bazar'),
+  (12, 'Nangalmora Jame Mosque', 'Nangalmora', 'Moulana Delwar Hossain', '01122-556222', 'Nangalmora Union'),
+  (13, 'Hathazari Paurashava Baitus Salam', 'Hathazari Paurashava', 'Moulana Abdul Wadud', '01823-556333', 'Municipality Ward-2'),
+  (14, 'Fatepur South Para Mosque', 'Fatepur', 'Hafiz Iqbal Hossain', '01724-556444', 'South Fatepur'),
+  (15, 'Mekhal West Para Mosque', 'Mekhal', 'Moulana Nasir Uddin', '01625-556555', 'West Mekhal');
 
 INSERT IGNORE INTO officer_profile (id, name, designation, join_date, telephone, mobile, email, photo_path) VALUES
   (1, 'জনাব মুহাম্মদ আব্দুল্লাহ আল মুমিন', 'উপজেলা নির্বাহী অফিসার', '2025-07-28', '031-2603191', '01836-672980', 'unohathazari@mopa.gov.bd', 'media/profile.jpeg');

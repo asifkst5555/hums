@@ -31,11 +31,19 @@ function db(): PDO
         $cfg['db_name']
     );
 
-    $pdo = new PDO($dsn, $cfg['db_user'], $cfg['db_pass'], [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
+    try {
+        $pdo = new PDO($dsn, $cfg['db_user'], $cfg['db_pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } catch (PDOException $e) {
+        error_log('Database connection failed: ' . $e->getMessage());
+        json_error(
+            'Database connection failed. Check DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS, and make sure MySQL is running.',
+            500
+        );
+    }
 
     return $pdo;
 }
@@ -97,6 +105,84 @@ function require_role(array $roles): array
         json_error('Forbidden', 403);
     }
     return $user;
+}
+
+function normalize_phone_digits(?string $value): string
+{
+    $value = (string) ($value ?? '');
+    $value = str_replace(["\u{221A}", "\u{F050}"], ' ', $value);
+    $value = preg_replace_callback('/[\x{09E6}-\x{09EF}]/u', static function (array $m): string {
+        return match ($m[0]) {
+            "\u{09E6}" => '0',
+            "\u{09E7}" => '1',
+            "\u{09E8}" => '2',
+            "\u{09E9}" => '3',
+            "\u{09EA}" => '4',
+            "\u{09EB}" => '5',
+            "\u{09EC}" => '6',
+            "\u{09ED}" => '7',
+            "\u{09EE}" => '8',
+            "\u{09EF}" => '9',
+            default => $m[0],
+        };
+    }, $value) ?? $value;
+
+    preg_match_all('/(?:88)?01\d{9}/', $value, $matches);
+    $phones = [];
+    foreach (($matches[0] ?? []) as $match) {
+        $normalized = str_starts_with($match, '88') ? substr($match, 2) : $match;
+        if ($normalized !== '' && !in_array($normalized, $phones, true)) {
+            $phones[] = $normalized;
+        }
+    }
+
+    if ($phones === []) {
+        $digitsOnly = preg_replace('/\D+/', '', $value) ?? '';
+        if ($digitsOnly !== '') {
+            for ($i = 0, $len = strlen($digitsOnly) - 10; $i < $len; $i += 1) {
+                $candidate = substr($digitsOnly, $i, 11);
+                if (preg_match('/^01\d{9}$/', $candidate) && !in_array($candidate, $phones, true)) {
+                    $phones[] = $candidate;
+                }
+            }
+        }
+    }
+
+    return implode(', ', $phones);
+}
+
+function clean_person_name(?string $value): string
+{
+    $value = (string) ($value ?? '');
+    $value = str_replace(["\u{221A}", "\u{F050}"], ' ', $value);
+    $value = preg_replace('/(?:88)?01[0-9\x{09E6}-\x{09EF}]{9}/u', ' ', $value) ?? $value;
+    $value = preg_replace('/[0-9\x{09E6}-\x{09EF}]+/u', ' ', $value) ?? $value;
+    $value = preg_replace('/\s*[-,]+\s*$/u', '', $value) ?? $value;
+    $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+    return trim($value, " \t\n\r\0\x0B-.,");
+}
+
+function split_person_name_phone(?string $name, ?string $phone): array
+{
+    $combinedName = (string) ($name ?? '');
+    $rawPhone = (string) ($phone ?? '');
+    $mergedPhone = normalize_phone_digits($combinedName . ' ' . $rawPhone);
+    $combinedPhone = normalize_phone_digits($rawPhone);
+    $phoneFromName = normalize_phone_digits($combinedName);
+
+    $phones = [];
+    foreach (array_merge(
+        $mergedPhone !== '' ? explode(', ', $mergedPhone) : [],
+        $combinedPhone !== '' ? explode(', ', $combinedPhone) : [],
+        $phoneFromName !== '' ? explode(', ', $phoneFromName) : []
+    ) as $candidate) {
+        $candidate = trim($candidate);
+        if ($candidate !== '' && !in_array($candidate, $phones, true)) {
+            $phones[] = $candidate;
+        }
+    }
+
+    return [clean_person_name($combinedName), implode(', ', $phones)];
 }
 
 function int_param(string $name): int

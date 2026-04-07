@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH="$HOME/hums.dynamicdigitalltd.com"
+    - export DEPLOYPATH="$HOME/hathazari.info"
     - /bin/mkdir -p "$DEPLOYPATH"
     - /bin/mkdir -p "$DEPLOYPATH/api"
     - /bin/mkdir -p "$DEPLOYPATH/js"
